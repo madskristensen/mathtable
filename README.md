@@ -1,5 +1,7 @@
 # Math Champ ✕
 
+[![GitHub Pages](https://github.com/madskristensen/mathtable/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/madskristensen/mathtable/actions/workflows/pages/pages-build-deployment)
+
 A fun, fast PWA to help kids master their multiplication tables (1–12). Built for iPad home screen use, works fully offline.
 
 🌐 **Play now:** [mathtable.fun](https://mathtable.fun)
