@@ -32,7 +32,7 @@ A fun, fast PWA to help kids master their multiplication tables (1–12). Built 
 ## Project Structure
 
 ```
-src/
+docs/
   index.html       Main app page
   style.css        Styles
   app.js           Game logic
@@ -45,16 +45,16 @@ src/
 
 ## Development
 
-No build step required. Serve the `src/` directory with any static file server:
+No build step required. Serve the `docs/` directory with any static file server:
 
 ```sh
-cd src
+cd docs
 npx serve .
 ```
 
 ## Deployment
 
-The `src/` folder is deployed to GitHub Pages. Set the Pages source to the `src/` directory (or configure GitHub Actions to publish from `src/`).
+GitHub Pages serves from the `docs/` folder on the `master` branch.
 
 ## License
 
