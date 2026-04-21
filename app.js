@@ -3,8 +3,8 @@
    ============================================ */
 
 // --- State ---
-let gameMode = null;        // 'quick' | 'practice' | 'challenge'
-let practiceTable = null;   // 1-12 when in practice mode
+let gameMode = null;        // 'quick' | 'practice' | 'challenge' | 'review'
+let practiceTable = null;
 let currentA = 0;
 let currentB = 0;
 let inputValue = '';
@@ -19,13 +19,112 @@ let timeLeft = 60;
 let lastGameMode = null;
 let lastPracticeTable = null;
 let isProcessing = false;
+let reviewQueue = [];
 
-// --- Persistent Stats (localStorage) ---
+// =============================================
+// SOUND ENGINE (Web Audio API — no files needed)
+// =============================================
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch { /* audio not available */ }
+}
+
+function soundTap() {
+  playTone(800, 0.05, 'sine', 0.08);
+}
+
+function soundCorrect() {
+  playTone(523, 0.1, 'sine', 0.15);
+  setTimeout(() => playTone(659, 0.1, 'sine', 0.15), 80);
+  setTimeout(() => playTone(784, 0.15, 'sine', 0.15), 160);
+}
+
+function soundWrong() {
+  playTone(300, 0.15, 'square', 0.1);
+  setTimeout(() => playTone(250, 0.2, 'square', 0.1), 120);
+}
+
+function soundStreak() {
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((n, i) => setTimeout(() => playTone(n, 0.15, 'sine', 0.12), i * 80));
+}
+
+function soundHighScore() {
+  const notes = [523, 659, 784, 880, 1047];
+  notes.forEach((n, i) => setTimeout(() => playTone(n, 0.2, 'triangle', 0.15), i * 100));
+}
+
+function soundTimerTick() {
+  playTone(1000, 0.03, 'sine', 0.06);
+}
+
+// =============================================
+// HAPTIC FEEDBACK
+// =============================================
+function haptic(pattern) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  } catch { /* not available */ }
+}
+
+function hapticTap()     { haptic(10); }
+function hapticCorrect() { haptic([20, 30, 20]); }
+function hapticWrong()   { haptic([50, 30, 50]); }
+function hapticStreak()  { haptic([20, 20, 20, 20, 40]); }
+
+// =============================================
+// MASCOT
+// =============================================
+const mascotStates = {
+  idle:     ['🤔', '🧐', '😊'],
+  correct:  ['😄', '🥳', '😎', '🤩', '💃'],
+  wrong:    ['😕', '🤨', '😬'],
+  streak5:  ['🤩', '🥳', '🏆'],
+  streak10: ['🏆', '👑', '🦸'],
+  thinking: ['🤔', '🧐', '💭'],
+};
+
+function setMascot(state, animate = 'bounce') {
+  const el = document.getElementById('mascot');
+  const faces = mascotStates[state] || mascotStates.idle;
+  el.textContent = faces[Math.floor(Math.random() * faces.length)];
+  el.className = 'mascot';
+  if (animate) {
+    void el.offsetWidth; // force reflow
+    el.classList.add(animate);
+  }
+}
+
+// =============================================
+// PERSISTENT STATS (localStorage)
+// =============================================
 const STORAGE_KEY = 'mathchamp_stats';
 
 function loadStats() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultStats();
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (data && data.problems) return data;
+    return defaultStats();
   } catch {
     return defaultStats();
   }
@@ -35,8 +134,10 @@ function defaultStats() {
   return {
     bestStreak: 0,
     totalSolved: 0,
-    // Track per-problem accuracy: key = "AxB", value = { correct, wrong }
     problems: {},
+    dailyStreak: 0,
+    lastPlayDate: null,
+    highScores: { quick: [], challenge: [] },
   };
 }
 
@@ -64,6 +165,102 @@ function recordProblem(a, b, correct) {
   saveStats(stats);
 }
 
+// =============================================
+// DAILY STREAK
+// =============================================
+function updateDailyStreak() {
+  const stats = loadStats();
+  const today = new Date().toDateString();
+  const lastPlay = stats.lastPlayDate;
+
+  if (lastPlay === today) return; // already counted today
+
+  if (lastPlay) {
+    const last = new Date(lastPlay);
+    const now = new Date(today);
+    const diffDays = Math.round((now - last) / 86400000);
+    if (diffDays === 1) {
+      stats.dailyStreak++;
+    } else if (diffDays > 1) {
+      stats.dailyStreak = 1;
+    }
+  } else {
+    stats.dailyStreak = 1;
+  }
+
+  stats.lastPlayDate = today;
+  saveStats(stats);
+}
+
+function getDailyStreak() {
+  const stats = loadStats();
+  const today = new Date().toDateString();
+  const lastPlay = stats.lastPlayDate;
+  if (!lastPlay) return 0;
+  const diffDays = Math.round((new Date(today) - new Date(lastPlay)) / 86400000);
+  if (diffDays > 1) return 0; // streak broken
+  return stats.dailyStreak || 0;
+}
+
+// =============================================
+// HIGH SCORES
+// =============================================
+function saveHighScore(mode, scoreVal, correctCnt, totalCnt) {
+  const stats = loadStats();
+  if (!stats.highScores) stats.highScores = { quick: [], challenge: [] };
+  if (!stats.highScores[mode]) stats.highScores[mode] = [];
+
+  const entry = {
+    score: scoreVal,
+    correct: correctCnt,
+    total: totalCnt,
+    date: new Date().toLocaleDateString(),
+  };
+
+  stats.highScores[mode].push(entry);
+  stats.highScores[mode].sort((a, b) => b.score - a.score);
+  stats.highScores[mode] = stats.highScores[mode].slice(0, 10);
+  saveStats(stats);
+
+  // Return true if this is a new #1
+  return stats.highScores[mode][0].score === scoreVal &&
+         stats.highScores[mode][0].date === entry.date;
+}
+
+function showHighScores() {
+  const stats = loadStats();
+  const hs = stats.highScores || { quick: [], challenge: [] };
+
+  renderScoreList('scores-challenge', hs.challenge || []);
+  renderScoreList('scores-quick', hs.quick || []);
+  showScreen('scores');
+}
+
+function renderScoreList(containerId, list) {
+  const el = document.getElementById(containerId);
+  if (list.length === 0) {
+    el.innerHTML = '<div class="scores-empty">No scores yet — go play!</div>';
+    return;
+  }
+  el.innerHTML = list.map((s, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+    return `
+      <div class="score-entry">
+        <span class="score-rank ${rankClass}">#${i + 1}</span>
+        <div class="score-details">
+          <span class="score-value">${s.score} pts</span>
+          <span class="score-date">${s.date}</span>
+        </div>
+        <span class="score-accuracy">${pct}%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// =============================================
+// MASTERY HELPERS
+// =============================================
 function getMastery(table) {
   const stats = loadStats();
   let total = 0, correct = 0;
@@ -79,6 +276,14 @@ function getMastery(table) {
   return Math.round((correct / total) * 100);
 }
 
+function getFactAccuracy(a, b) {
+  const stats = loadStats();
+  const key = `${a}x${b}`;
+  const p = stats.problems[key];
+  if (!p || (p.correct + p.wrong === 0)) return -1; // never attempted
+  return p.correct / (p.correct + p.wrong);
+}
+
 function getMasteredCount() {
   let count = 0;
   for (let t = 1; t <= 12; t++) {
@@ -87,12 +292,75 @@ function getMasteredCount() {
   return count;
 }
 
-// --- Problem Generation (adaptive) ---
+// =============================================
+// PROGRESS MAP
+// =============================================
+function showProgressMap() {
+  const grid = document.getElementById('progress-grid');
+  grid.innerHTML = '';
+
+  // Corner cell (empty)
+  const corner = document.createElement('div');
+  corner.className = 'grid-header';
+  corner.textContent = '×';
+  grid.appendChild(corner);
+
+  // Column headers
+  for (let b = 1; b <= 12; b++) {
+    const h = document.createElement('div');
+    h.className = 'grid-header';
+    h.textContent = b;
+    grid.appendChild(h);
+  }
+
+  let masteredCount = 0;
+  let learningCount = 0;
+  let goodCount = 0;
+  let newCount = 0;
+
+  for (let a = 1; a <= 12; a++) {
+    // Row header
+    const rh = document.createElement('div');
+    rh.className = 'grid-header';
+    rh.textContent = a;
+    grid.appendChild(rh);
+
+    for (let b = 1; b <= 12; b++) {
+      const cell = document.createElement('div');
+      const acc = getFactAccuracy(a, b);
+      let cls, label;
+
+      if (acc < 0) {
+        cls = 'cell-new'; label = ''; newCount++;
+      } else if (acc < 0.6) {
+        cls = 'cell-learning'; label = Math.round(acc * 100); learningCount++;
+      } else if (acc < 0.9) {
+        cls = 'cell-good'; label = Math.round(acc * 100); goodCount++;
+      } else {
+        cls = 'cell-mastered'; label = '✓'; masteredCount++;
+      }
+
+      cell.className = `grid-cell ${cls}`;
+      cell.textContent = label;
+      cell.title = `${a}×${b} = ${a * b}`;
+      grid.appendChild(cell);
+    }
+  }
+
+  const total = 144;
+  const summary = document.getElementById('progress-summary');
+  summary.textContent = `✓ ${masteredCount} mastered · ${goodCount} good · ${learningCount} learning · ${newCount} new — ${Math.round((masteredCount / total) * 100)}% complete`;
+
+  showScreen('progress');
+}
+
+// =============================================
+// PROBLEM GENERATION (adaptive)
+// =============================================
 function generateProblem() {
   if (gameMode === 'practice' && practiceTable) {
     return generateAdaptive(practiceTable, practiceTable);
   }
-  // For quick play and challenge, use all tables
   return generateAdaptive(1, 12);
 }
 
@@ -104,15 +372,14 @@ function generateAdaptive(minTable, maxTable) {
     for (let b = 1; b <= 12; b++) {
       const key = `${a}x${b}`;
       const p = stats.problems[key];
-      // Weight: more wrong answers = higher weight
-      let weight = 3; // base weight
+      let weight = 3;
       if (p) {
         const accuracy = p.correct / (p.correct + p.wrong);
         if (accuracy < 0.5) weight = 10;
         else if (accuracy < 0.75) weight = 6;
         else if (accuracy >= 0.95 && p.correct + p.wrong > 5) weight = 1;
       } else {
-        weight = 5; // never seen = moderate weight
+        weight = 5;
       }
       for (let w = 0; w < weight; w++) {
         candidates.push([a, b]);
@@ -120,7 +387,6 @@ function generateAdaptive(minTable, maxTable) {
     }
   }
 
-  // Avoid repeating the same problem
   let attempts = 0;
   let a, b;
   do {
@@ -132,7 +398,9 @@ function generateAdaptive(minTable, maxTable) {
   return [a, b];
 }
 
-// --- Screen Navigation ---
+// =============================================
+// SCREEN NAVIGATION
+// =============================================
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`screen-${id}`).classList.add('active');
@@ -149,9 +417,12 @@ function updateHomeStats() {
   document.getElementById('home-streak').textContent = stats.bestStreak;
   document.getElementById('home-total').textContent = stats.totalSolved;
   document.getElementById('home-mastered').textContent = getMasteredCount();
+  document.getElementById('daily-count').textContent = getDailyStreak();
 }
 
-// --- Table Picker ---
+// =============================================
+// TABLE PICKER
+// =============================================
 function showTablePicker() {
   const grid = document.getElementById('table-grid');
   grid.innerHTML = '';
@@ -170,7 +441,9 @@ function showTablePicker() {
   showScreen('picker');
 }
 
-// --- Game Start ---
+// =============================================
+// GAME START
+// =============================================
 function resetGame() {
   score = 0;
   streak = 0;
@@ -180,7 +453,9 @@ function resetGame() {
   wrongProblems = [];
   inputValue = '';
   isProcessing = false;
+  reviewQueue = [];
   updateDisplay();
+  setMascot('thinking', null);
 }
 
 function startQuickPlay() {
@@ -188,6 +463,7 @@ function startQuickPlay() {
   lastGameMode = 'quick';
   practiceTable = null;
   resetGame();
+  updateDailyStreak();
   document.getElementById('timer-display').style.display = 'none';
   showScreen('game');
   nextProblem();
@@ -199,6 +475,7 @@ function startPractice(table) {
   practiceTable = table;
   lastPracticeTable = table;
   resetGame();
+  updateDailyStreak();
   document.getElementById('timer-display').style.display = 'none';
   showScreen('game');
   nextProblem();
@@ -209,6 +486,7 @@ function startChallenge() {
   lastGameMode = 'challenge';
   practiceTable = null;
   resetGame();
+  updateDailyStreak();
   timeLeft = 60;
   document.getElementById('timer-display').style.display = '';
   document.getElementById('timer-value').textContent = '60';
@@ -218,6 +496,37 @@ function startChallenge() {
   startTimer();
 }
 
+function startReview() {
+  if (wrongProblems.length === 0) return;
+
+  // Build unique review queue from wrong problems
+  const seen = new Set();
+  reviewQueue = [];
+  for (const p of wrongProblems) {
+    const key = `${p.a}x${p.b}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      reviewQueue.push({ a: p.a, b: p.b });
+    }
+  }
+
+  gameMode = 'review';
+  score = 0;
+  streak = 0;
+  bestStreak = 0;
+  correctCount = 0;
+  totalCount = 0;
+  wrongProblems = [];
+  inputValue = '';
+  isProcessing = false;
+  updateDisplay();
+  setMascot('thinking', null);
+
+  document.getElementById('timer-display').style.display = 'none';
+  showScreen('game');
+  nextProblem();
+}
+
 function startTimer() {
   stopTimer();
   timerInterval = setInterval(() => {
@@ -225,6 +534,7 @@ function startTimer() {
     document.getElementById('timer-value').textContent = timeLeft;
     if (timeLeft <= 10) {
       document.getElementById('timer-display').classList.add('warning');
+      soundTimerTick();
     }
     if (timeLeft <= 0) {
       stopTimer();
@@ -240,9 +550,22 @@ function stopTimer() {
   }
 }
 
-// --- Gameplay ---
+// =============================================
+// GAMEPLAY
+// =============================================
 function nextProblem() {
-  const [a, b] = generateProblem();
+  let a, b;
+  if (gameMode === 'review' && reviewQueue.length > 0) {
+    const item = reviewQueue.shift();
+    a = item.a;
+    b = item.b;
+  } else if (gameMode === 'review') {
+    endGame();
+    return;
+  } else {
+    [a, b] = generateProblem();
+  }
+
   currentA = a;
   currentB = b;
   inputValue = '';
@@ -253,19 +576,23 @@ function nextProblem() {
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('problem').className = 'problem';
+  setMascot('thinking', null);
 }
 
 function pressNum(n) {
   if (isProcessing) return;
-  if (inputValue.length >= 3) return; // max 3 digits (144)
+  if (inputValue.length >= 3) return;
   inputValue += n;
   updateAnswerDisplay();
+  soundTap();
+  hapticTap();
 }
 
 function clearAnswer() {
   if (isProcessing) return;
   inputValue = inputValue.slice(0, -1);
   updateAnswerDisplay();
+  soundTap();
 }
 
 function updateAnswerDisplay() {
@@ -289,11 +616,19 @@ function submitAnswer() {
     handleWrong(correct);
   }
 
-  recordProblem(currentA, currentB, isCorrect);
+  if (gameMode !== 'review') {
+    recordProblem(currentA, currentB, isCorrect);
+  }
 
-  // Auto-advance after delay
+  // Auto-advance
   setTimeout(() => {
-    if (gameMode === 'quick' && totalCount >= 20) {
+    if (gameMode === 'review') {
+      if (reviewQueue.length === 0) {
+        endGame();
+      } else {
+        nextProblem();
+      }
+    } else if (gameMode === 'quick' && totalCount >= 20) {
       endGame();
     } else if (gameMode === 'practice' && totalCount >= 15) {
       endGame();
@@ -308,7 +643,6 @@ function handleCorrect() {
   correctCount++;
   if (streak > bestStreak) bestStreak = streak;
 
-  // Score: base 10 + streak bonus
   const points = 10 + Math.min(streak * 2, 20);
   score += points;
 
@@ -319,11 +653,24 @@ function handleCorrect() {
   const phrases = ['Nice! 🎉', 'Awesome! ⭐', 'Perfect! 💪', 'Wow! 🔥', 'Yes! 🚀', 'Nailed it! 💥'];
   fb.textContent = phrases[Math.floor(Math.random() * phrases.length)] + ` +${points}`;
 
+  soundCorrect();
+  hapticCorrect();
   updateDisplay();
+
+  // Mascot reacts to streak
+  if (streak >= 10) {
+    setMascot('streak10', 'dance');
+  } else if (streak >= 5) {
+    setMascot('streak5', 'bounce');
+  } else {
+    setMascot('correct', 'bounce');
+  }
 
   // Confetti for streaks of 5+
   if (streak > 0 && streak % 5 === 0) {
     launchConfetti();
+    soundStreak();
+    hapticStreak();
   }
 
   // Animate streak fire
@@ -340,6 +687,10 @@ function handleWrong(correct) {
   fb.textContent = `${currentA} × ${currentB} = ${correct}`;
 
   wrongProblems.push({ a: currentA, b: currentB, given: parseInt(inputValue), answer: correct });
+
+  soundWrong();
+  hapticWrong();
+  setMascot('wrong', 'shake');
   updateDisplay();
 }
 
@@ -348,7 +699,9 @@ function updateDisplay() {
   document.getElementById('score-count').textContent = score;
 }
 
-// --- End Game / Results ---
+// =============================================
+// END GAME / RESULTS
+// =============================================
 function endGame() {
   stopTimer();
 
@@ -356,7 +709,6 @@ function endGame() {
   document.getElementById('result-correct').textContent = `${correctCount}/${totalCount}`;
   document.getElementById('result-best-streak').textContent = bestStreak;
 
-  // Results header varies by performance
   const pct = totalCount > 0 ? correctCount / totalCount : 0;
   const header = document.getElementById('results-header');
   if (pct >= 0.9) {
@@ -369,12 +721,29 @@ function endGame() {
     header.innerHTML = '<span class="results-emoji">📚</span><h2>Keep Practicing!</h2>';
   }
 
+  // High score tracking (not for review or practice)
+  const hsEl = document.getElementById('new-high-score');
+  if ((gameMode === 'quick' || gameMode === 'challenge') && totalCount > 0) {
+    const isNewHS = saveHighScore(gameMode, score, correctCount, totalCount);
+    if (isNewHS) {
+      hsEl.style.display = '';
+      soundHighScore();
+      launchConfetti();
+    } else {
+      hsEl.style.display = 'none';
+    }
+  } else {
+    hsEl.style.display = 'none';
+  }
+
   // Trouble spots
   const troubleDiv = document.getElementById('trouble-spots');
   const troubleList = document.getElementById('trouble-list');
+  const reviewBtn = document.getElementById('btn-review');
+
   if (wrongProblems.length > 0) {
     troubleDiv.style.display = '';
-    // Deduplicate
+    reviewBtn.style.display = '';
     const seen = new Set();
     troubleList.innerHTML = '';
     for (const p of wrongProblems) {
@@ -391,9 +760,10 @@ function endGame() {
     }
   } else {
     troubleDiv.style.display = 'none';
+    reviewBtn.style.display = 'none';
   }
 
-  if (pct >= 0.8) launchConfetti();
+  if (pct >= 0.8 && gameMode !== 'review') launchConfetti();
   showScreen('results');
 }
 
@@ -404,7 +774,9 @@ function playAgain() {
   else goHome();
 }
 
-// --- Confetti ---
+// =============================================
+// CONFETTI
+// =============================================
 const confettiCanvas = document.getElementById('confetti-canvas');
 const confettiCtx = confettiCanvas.getContext('2d');
 let confettiParticles = [];
@@ -467,7 +839,9 @@ function animateConfetti() {
   }
 }
 
-// --- Keyboard Support ---
+// =============================================
+// KEYBOARD SUPPORT
+// =============================================
 document.addEventListener('keydown', (e) => {
   if (!document.getElementById('screen-game').classList.contains('active')) return;
   if (e.key >= '0' && e.key <= '9') pressNum(parseInt(e.key));
@@ -475,10 +849,16 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Enter') submitAnswer();
 });
 
-// --- Init ---
+// Resume AudioContext on first user interaction (iOS requirement)
+document.addEventListener('touchstart', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}, { once: true });
+
+// =============================================
+// INIT
+// =============================================
 updateHomeStats();
 
-// --- Service Worker Registration ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});

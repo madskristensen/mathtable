@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mathchamp-v1';
+const CACHE_NAME = 'mathchamp-v2';
 const ASSETS = [
   './',
   './index.html',

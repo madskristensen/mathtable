@@ -23,6 +23,11 @@
           <h1>Math Champ</h1>
           <p class="subtitle">Master your multiplication tables!</p>
         </div>
+        <div class="daily-streak" id="daily-streak">
+          <span class="daily-fire">🔥</span>
+          <span class="daily-count" id="daily-count">0</span>
+          <span class="daily-label">day streak</span>
+        </div>
         <div class="menu-buttons">
           <button class="btn btn-play" onclick="startQuickPlay()">
             <span class="btn-icon">⚡</span>
@@ -38,6 +43,16 @@
             <span class="btn-icon">🏆</span>
             <span class="btn-label">Challenge</span>
             <span class="btn-desc">60 second time attack!</span>
+          </button>
+          <button class="btn btn-progress" onclick="showProgressMap()">
+            <span class="btn-icon">🗺️</span>
+            <span class="btn-label">Progress Map</span>
+            <span class="btn-desc">See all 144 facts</span>
+          </button>
+          <button class="btn btn-scores" onclick="showHighScores()">
+            <span class="btn-icon">🏅</span>
+            <span class="btn-label">High Scores</span>
+            <span class="btn-desc">Your personal bests</span>
           </button>
         </div>
         <div class="stats-bar">
@@ -66,6 +81,39 @@
       </div>
     </div>
 
+    <!-- PROGRESS MAP SCREEN -->
+    <div id="screen-progress" class="screen">
+      <div class="progress-content">
+        <button class="back-btn" onclick="goHome()">← Back</button>
+        <h2>Progress Map</h2>
+        <p class="progress-subtitle">Every multiplication fact 1–12</p>
+        <div class="progress-legend">
+          <span class="legend-item"><span class="legend-dot legend-new"></span> New</span>
+          <span class="legend-item"><span class="legend-dot legend-learning"></span> Learning</span>
+          <span class="legend-item"><span class="legend-dot legend-good"></span> Good</span>
+          <span class="legend-item"><span class="legend-dot legend-mastered"></span> Mastered</span>
+        </div>
+        <div class="progress-grid" id="progress-grid"></div>
+        <div class="progress-summary" id="progress-summary"></div>
+      </div>
+    </div>
+
+    <!-- HIGH SCORES SCREEN -->
+    <div id="screen-scores" class="screen">
+      <div class="scores-content">
+        <button class="back-btn" onclick="goHome()">← Back</button>
+        <h2>🏅 High Scores</h2>
+        <div class="scores-section">
+          <h3>Challenge Mode</h3>
+          <div class="scores-list" id="scores-challenge"></div>
+        </div>
+        <div class="scores-section">
+          <h3>Quick Play</h3>
+          <div class="scores-list" id="scores-quick"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- GAME SCREEN -->
     <div id="screen-game" class="screen">
       <div class="game-header">
@@ -85,6 +133,7 @@
       </div>
 
       <div class="game-body">
+        <div class="mascot" id="mascot">🤔</div>
         <div class="problem-container">
           <div class="problem" id="problem">
             <span class="problem-num" id="num-a">7</span>
@@ -134,13 +183,20 @@
             <span class="result-stat-label">Best Streak</span>
           </div>
         </div>
+        <div class="new-high-score" id="new-high-score" style="display:none">
+          🎉 NEW HIGH SCORE! 🎉
+        </div>
         <div class="trouble-spots" id="trouble-spots" style="display:none">
           <h3>Keep Practicing</h3>
           <div id="trouble-list"></div>
         </div>
         <div class="results-buttons">
-          <button class="btn btn-play" onclick="playAgain()">
+          <button class="btn btn-review" id="btn-review" onclick="startReview()" style="display:none">
             <span class="btn-icon">🔄</span>
+            <span class="btn-label">Review Mistakes</span>
+          </button>
+          <button class="btn btn-play" onclick="playAgain()">
+            <span class="btn-icon">▶️</span>
             <span class="btn-label">Play Again</span>
           </button>
           <button class="btn btn-practice" onclick="goHome()">
