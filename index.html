@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Math Champ">
+  <meta name="theme-color" content="#6c5ce7">
+  <title>Math Champ ✕</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- HOME SCREEN -->
+    <div id="screen-home" class="screen active">
+      <div class="home-content">
+        <div class="logo">
+          <span class="logo-icon">✕</span>
+          <h1>Math Champ</h1>
+          <p class="subtitle">Master your multiplication tables!</p>
+        </div>
+        <div class="menu-buttons">
+          <button class="btn btn-play" onclick="startQuickPlay()">
+            <span class="btn-icon">⚡</span>
+            <span class="btn-label">Quick Play</span>
+            <span class="btn-desc">Random problems</span>
+          </button>
+          <button class="btn btn-practice" onclick="showTablePicker()">
+            <span class="btn-icon">📚</span>
+            <span class="btn-label">Practice</span>
+            <span class="btn-desc">Pick a table to master</span>
+          </button>
+          <button class="btn btn-challenge" onclick="startChallenge()">
+            <span class="btn-icon">🏆</span>
+            <span class="btn-label">Challenge</span>
+            <span class="btn-desc">60 second time attack!</span>
+          </button>
+        </div>
+        <div class="stats-bar">
+          <div class="stat">
+            <span class="stat-value" id="home-streak">0</span>
+            <span class="stat-label">Best Streak</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="home-total">0</span>
+            <span class="stat-label">Total Solved</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="home-mastered">0</span>
+            <span class="stat-label">Mastered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE PICKER SCREEN -->
+    <div id="screen-picker" class="screen">
+      <div class="picker-content">
+        <button class="back-btn" onclick="goHome()">← Back</button>
+        <h2>Pick a Table</h2>
+        <div class="table-grid" id="table-grid"></div>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <button class="back-btn" onclick="endGame()">✕</button>
+        <div class="game-info">
+          <div class="streak" id="streak-display">
+            <span class="streak-fire" id="streak-fire">🔥</span>
+            <span id="streak-count">0</span>
+          </div>
+          <div class="score" id="score-display">
+            Score: <span id="score-count">0</span>
+          </div>
+        </div>
+        <div class="timer" id="timer-display" style="display:none">
+          <span id="timer-value">60</span>s
+        </div>
+      </div>
+
+      <div class="game-body">
+        <div class="problem-container">
+          <div class="problem" id="problem">
+            <span class="problem-num" id="num-a">7</span>
+            <span class="problem-op">×</span>
+            <span class="problem-num" id="num-b">8</span>
+            <span class="problem-eq">=</span>
+            <span class="problem-answer" id="answer-display">?</span>
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="numpad">
+          <button class="num-btn" onclick="pressNum(1)">1</button>
+          <button class="num-btn" onclick="pressNum(2)">2</button>
+          <button class="num-btn" onclick="pressNum(3)">3</button>
+          <button class="num-btn" onclick="pressNum(4)">4</button>
+          <button class="num-btn" onclick="pressNum(5)">5</button>
+          <button class="num-btn" onclick="pressNum(6)">6</button>
+          <button class="num-btn" onclick="pressNum(7)">7</button>
+          <button class="num-btn" onclick="pressNum(8)">8</button>
+          <button class="num-btn" onclick="pressNum(9)">9</button>
+          <button class="num-btn num-btn-clear" onclick="clearAnswer()">⌫</button>
+          <button class="num-btn" onclick="pressNum(0)">0</button>
+          <button class="num-btn num-btn-go" onclick="submitAnswer()">GO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="screen-results" class="screen">
+      <div class="results-content">
+        <div class="results-header" id="results-header">
+          <span class="results-emoji">🌟</span>
+          <h2>Great Job!</h2>
+        </div>
+        <div class="results-stats">
+          <div class="result-stat">
+            <span class="result-stat-value" id="result-score">0</span>
+            <span class="result-stat-label">Score</span>
+          </div>
+          <div class="result-stat">
+            <span class="result-stat-value" id="result-correct">0</span>
+            <span class="result-stat-label">Correct</span>
+          </div>
+          <div class="result-stat">
+            <span class="result-stat-value" id="result-best-streak">0</span>
+            <span class="result-stat-label">Best Streak</span>
+          </div>
+        </div>
+        <div class="trouble-spots" id="trouble-spots" style="display:none">
+          <h3>Keep Practicing</h3>
+          <div id="trouble-list"></div>
+        </div>
+        <div class="results-buttons">
+          <button class="btn btn-play" onclick="playAgain()">
+            <span class="btn-icon">🔄</span>
+            <span class="btn-label">Play Again</span>
+          </button>
+          <button class="btn btn-practice" onclick="goHome()">
+            <span class="btn-icon">🏠</span>
+            <span class="btn-label">Home</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFETTI CANVAS -->
+    <canvas id="confetti-canvas"></canvas>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
