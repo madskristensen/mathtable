@@ -47,6 +47,13 @@ const GAME_REGISTRY = {
     defaultMode: 'quick',
     loader: () => import('./games/timemath.js'),
   },
+  reading: {
+    title: 'Word Reading',
+    icon: '🔤',
+    description: 'Read the word and pick the matching picture!',
+    defaultMode: 'quick',
+    loader: () => import('./games/reading.js'),
+  },
 };
 
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];
@@ -227,6 +234,65 @@ function animateMascotReaction(isCorrect) {
   }, MASCOT_ANIMATION_DURATION_MS);
 }
 
+function launchConfetti() {
+  const COLORS = ['#ff595e','#ffca3a','#6a4c93','#1982c4','#8ac926','#ff924c','#ffffff'];
+  const PARTICLE_COUNT = 80;
+  const DURATION_MS = 1400;
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+    x: Math.random() * canvas.width,
+    y: canvas.height * (0.3 + Math.random() * 0.3),
+    r: 5 + Math.random() * 5,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    vx: (Math.random() - 0.5) * 9,
+    vy: -(6 + Math.random() * 7),
+    gravity: 0.35,
+    rotation: Math.random() * Math.PI * 2,
+    rotationSpeed: (Math.random() - 0.5) * 0.3,
+    shape: Math.random() < 0.5 ? 'rect' : 'circle',
+  }));
+
+  const start = performance.now();
+
+  function draw(now) {
+    const elapsed = now - start;
+    if (elapsed >= DURATION_MS) {
+      canvas.remove();
+      return;
+    }
+    const alpha = elapsed < DURATION_MS * 0.7 ? 1 : 1 - (elapsed - DURATION_MS * 0.7) / (DURATION_MS * 0.3);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of particles) {
+      p.vy += p.gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotationSpeed;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
 function updateHomeStats() {
   const stats = loadStats();
   document.getElementById('home-best-streak').textContent = stats.bestStreak;
@@ -271,6 +337,17 @@ async function loadGame(gameId) {
   return state.loadedGames[gameId];
 }
 
+const CARD_ACCENTS = [
+  '#e8540a', // orange-red
+  '#7c3aed', // purple
+  '#0ea5e9', // sky blue
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ec4899', // pink
+  '#14b8a6', // teal
+  '#8b5cf6', // violet
+];
+
 async function renderGameCards() {
   const carousel = document.getElementById('games-grid');
   const dotsContainer = document.getElementById('carousel-dots');
@@ -283,6 +360,7 @@ async function renderGameCards() {
     const game = GAME_REGISTRY[gameId];
     const card = document.createElement('button');
     card.className = 'game-card';
+    card.style.setProperty('--card-accent', CARD_ACCENTS[index % CARD_ACCENTS.length]);
     const best = getHighScore(gameId);
     const highScoreLabel = best ? `High score: ${best.score}` : 'High score: —';
     card.innerHTML = `
@@ -439,7 +517,7 @@ function renderQuestion() {
   } else {
     question.answers.forEach((answer) => {
       const btn = document.createElement('button');
-      btn.className = 'answer-btn';
+      btn.className = question.answerClass ? `answer-btn ${question.answerClass}` : 'answer-btn';
       btn.innerHTML = answer.label;
       btn.dataset.value = String(answer.value);
       btn.addEventListener('click', () => submitAnswer(answer.value, btn));
@@ -500,6 +578,7 @@ function submitNumpadAnswer(value) {
     state.session.score += 10 + Math.min(state.session.streak * 2, 20);
     setFeedback(`Nice! ${getMascot()} +${10 + Math.min(state.session.streak * 2, 20)}`, 'correct-fb');
     animateMascotReaction(true);
+    launchConfetti();
   } else {
     state.session.streak = 0;
     setFeedback(`Oops! The answer was ${state.currentQuestion.correctValue} ${getMascot()}`, 'wrong-fb');
@@ -522,51 +601,6 @@ function submitNumpadAnswer(value) {
     if (!state.session || state.session.ended) return;
     advanceRound();
   }, 900);
-}
-
-function launchConfetti() {
-  const canvas = document.getElementById('confetti-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  const particles = [];
-  const colors = ['#6c5ce7', '#e84393', '#00b894', '#f39c12', '#0984e3', '#fdcb6e'];
-  for (let i = 0; i < 50; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: -10,
-      vx: (Math.random() - 0.5) * 6,
-      vy: 2 + Math.random() * 3,
-      size: 4 + Math.random() * 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      life: 1,
-    });
-  }
-
-  function tick() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.08;
-      p.life -= 0.015;
-
-      if (p.life <= 0) continue;
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
-    }
-
-    if (particles.some((p) => p.life > 0)) {
-      requestAnimationFrame(tick);
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }
-
-  tick();
 }
 
 function stopSessionTimer() {
@@ -613,9 +647,10 @@ function renderModeCards(gameId, game) {
   const list = document.getElementById('mode-list');
   list.innerHTML = '';
 
-  getGameModes(game).forEach((mode) => {
+  getGameModes(game).forEach((mode, index) => {
     const btn = document.createElement('button');
     btn.className = 'mode-card';
+    btn.style.setProperty('--mode-accent', CARD_ACCENTS[index % CARD_ACCENTS.length]);
     const best = mode.kind === 'play' ? getHighScore(gameId) : null;
     const highScoreLabel = mode.kind === 'play'
       ? (best ? `High score: ${best.score}` : 'High score: —')
@@ -849,6 +884,7 @@ function submitAnswer(value, selectedButton) {
     state.session.score += 10 + Math.min(state.session.streak * 2, 20);
     setFeedback(`Nice! ${getMascot()} +${10 + Math.min(state.session.streak * 2, 20)}`, 'correct-fb');
     animateMascotReaction(true);
+    launchConfetti();
   } else {
     state.session.streak = 0;
     setFeedback(`Oops! Try the next one ${getMascot()}`, 'wrong-fb');

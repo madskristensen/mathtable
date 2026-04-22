@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v15';
+const CACHE_NAME = 'kids-hub-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './icon-512.png',
   './games/multiplication.js?v=15',
   './games/clock.js?v=15',
+  './games/reading.js',
 ];
 
 self.addEventListener('install', (e) => {
