@@ -205,7 +205,7 @@ async function renderGameCards() {
     const game = GAME_REGISTRY[gameId];
     const card = document.createElement('button');
     card.className = 'game-card';
-    const best = getHighScore(gameId, game.defaultMode || null);
+    const best = getHighScore(gameId);
     const highScoreLabel = best ? `High score: ${best.score}` : 'High score: —';
     card.innerHTML = `
       <span class="game-card-header">
@@ -220,16 +220,32 @@ async function renderGameCards() {
   }
 }
 
-function getHighScore(gameId, modeId = null) {
+function getGameHighScoreEntries(stats, gameId) {
+  const entries = [];
+  const primary = stats.highScores[gameId];
+  if (Array.isArray(primary)) {
+    entries.push(...primary);
+  }
+
+  const legacyPrefix = `${gameId}:`;
+  Object.entries(stats.highScores).forEach(([key, value]) => {
+    if (key.startsWith(legacyPrefix) && Array.isArray(value)) {
+      entries.push(...value);
+    }
+  });
+
+  return entries.sort((a, b) => b.score - a.score).slice(0, 10);
+}
+
+function getHighScore(gameId) {
   const stats = loadStats();
-  const key = modeId ? `${gameId}:${modeId}` : gameId;
-  return (stats.highScores[key] || [])[0] || null;
+  return getGameHighScoreEntries(stats, gameId)[0] || null;
 }
 
 function saveHighScore(gameId, modeId, score, correct, total) {
   const stats = loadStats();
-  const key = modeId ? `${gameId}:${modeId}` : gameId;
-  const list = stats.highScores[key] || [];
+  const key = gameId;
+  const list = getGameHighScoreEntries(stats, gameId);
 
   list.push({
     score,
@@ -240,6 +256,14 @@ function saveHighScore(gameId, modeId, score, correct, total) {
 
   list.sort((a, b) => b.score - a.score);
   stats.highScores[key] = list.slice(0, 10);
+
+  const legacyPrefix = `${gameId}:`;
+  Object.keys(stats.highScores).forEach((existingKey) => {
+    if (existingKey.startsWith(legacyPrefix)) {
+      delete stats.highScores[existingKey];
+    }
+  });
+
   saveStats(stats);
 
   const best = stats.highScores[key][0];
@@ -248,8 +272,7 @@ function saveHighScore(gameId, modeId, score, correct, total) {
 
 function updateHomeSubtitle() {
   const gameSummaries = Object.entries(GAME_REGISTRY).map(([gameId, metadata]) => {
-    const defaultMode = metadata.defaultMode || null;
-    const best = getHighScore(gameId, defaultMode);
+    const best = getHighScore(gameId);
     return best ? `${metadata.title} best ${best.score}` : null;
   });
 
