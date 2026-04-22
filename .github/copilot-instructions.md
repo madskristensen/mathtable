@@ -35,6 +35,7 @@ Add a game by extending `GAME_REGISTRY` in `app.js`:
 GAME_REGISTRY['my-game'] = {
   title: 'My Game',
   icon: '🎯',
+  category: 'math',             // 'math' | 'time' | 'reading' — shown as a badge on the home card
   description: 'One-line description shown on the home card.',
   defaultMode: 'play',          // used for high-score subtitle on home screen
   loader: () => import('./games/my-game.js'),
@@ -43,7 +44,9 @@ GAME_REGISTRY['my-game'] = {
 
 ### Home screen carousel
 
-Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Each card shows:
+Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Cards are grouped by `category`; before the first card of each category the framework inserts a slim **category header** (icon + label) that visually separates the groups (Math, Time, Reading).
+
+Each card shows:
 - A large emoji `icon` (~4.5 rem) at the top
 - `title` below the icon
 - `description` as body text (keep it short — 1–2 sentences)

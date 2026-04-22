@@ -5,17 +5,17 @@ const MASCOT_ANIMATION_DURATION_MS = 450;
 const ANSWER_REVEAL_MS = 900;
 const HOME_ROUTE = '/';
 
+const CATEGORIES = {
+  math:    { label: 'Math',    icon: '🔢' },
+  time:    { label: 'Time',    icon: '⏰' },
+  reading: { label: 'Reading', icon: '📖' },
+};
+
 const GAME_REGISTRY = {
-  multiplication: {
-    title: 'Multiplication',
-    icon: '✖️',
-    description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
-    defaultMode: 'quick',
-    loader: () => import('./games/multiplication.js?v=16'),
-  },
   addition: {
     title: 'Addition',
     icon: '➕',
+    category: 'math',
     description: 'Quick Game, Practice, Challenge, and Addition Map.',
     defaultMode: 'quick',
     loader: () => import('./games/addition.js?v=16'),
@@ -23,13 +23,23 @@ const GAME_REGISTRY = {
   subtraction: {
     title: 'Subtraction',
     icon: '➖',
+    category: 'math',
     description: 'Quick Game, Practice, Challenge, and Subtraction Map.',
     defaultMode: 'quick',
     loader: () => import('./games/subtraction.js?v=16'),
   },
+  multiplication: {
+    title: 'Multiplication',
+    icon: '✖️',
+    category: 'math',
+    description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/multiplication.js?v=16'),
+  },
   division: {
     title: 'Division',
     icon: '➗',
+    category: 'math',
     description: 'Quick Game, Practice, Challenge, and Division Map.',
     defaultMode: 'quick',
     loader: () => import('./games/division.js?v=16'),
@@ -37,6 +47,7 @@ const GAME_REGISTRY = {
   clock: {
     title: 'Tell Time (Analog Clock)',
     icon: '🕒',
+    category: 'time',
     description: 'Quick Game, Practice, and Challenge.',
     defaultMode: 'quick',
     loader: () => import('./games/clock.js?v=16'),
@@ -44,6 +55,7 @@ const GAME_REGISTRY = {
   timemath: {
     title: 'Time Math',
     icon: '⏱️',
+    category: 'time',
     description: 'Add and subtract time. Quick Game, Practice, and Challenge.',
     defaultMode: 'quick',
     loader: () => import('./games/timemath.js?v=16'),
@@ -51,6 +63,7 @@ const GAME_REGISTRY = {
   reading: {
     title: 'Word Reading',
     icon: '🔤',
+    category: 'reading',
     description: 'Read the word and pick the matching picture!',
     defaultMode: 'quick',
     loader: () => import('./games/reading.js?v=16'),
@@ -58,6 +71,7 @@ const GAME_REGISTRY = {
   flashword: {
     title: 'Flash Word',
     icon: '⚡',
+    category: 'reading',
     description: 'A word flashes for a moment — pick which one you saw!',
     defaultMode: 'sight',
     loader: () => import('./games/flashword.js?v=16'),
@@ -407,8 +421,33 @@ function renderGameCards() {
   dotsContainer.innerHTML = '';
 
   const gameIds = Object.keys(GAME_REGISTRY);
+  let currentGroupRow = null;
+  let lastCategory = null;
   gameIds.forEach((gameId, index) => {
     const game = GAME_REGISTRY[gameId];
+
+    if (!currentGroupRow || game.category !== lastCategory) {
+      const group = document.createElement('div');
+      group.className = 'category-group';
+
+      if (game.category) {
+        const meta = CATEGORIES[game.category];
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.setAttribute('aria-hidden', 'true');
+        header.innerHTML = `
+          <span class="category-header-label">${meta?.label ?? game.category}</span>
+        `;
+        group.appendChild(header);
+      }
+
+      currentGroupRow = document.createElement('div');
+      currentGroupRow.className = 'category-cards';
+      group.appendChild(currentGroupRow);
+      carousel.appendChild(group);
+      lastCategory = game.category;
+    }
+
     const card = createCard({
       className: 'game-card',
       accentVar: '--card-accent',
@@ -419,7 +458,7 @@ function renderGameCards() {
       scoreLabel: highScoreLabel(gameId),
       onClick: () => startGame(gameId),
     });
-    carousel.appendChild(card);
+    currentGroupRow.appendChild(card);
 
     const dot = document.createElement('button');
     dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
@@ -430,17 +469,39 @@ function renderGameCards() {
     dotsContainer.appendChild(dot);
   });
 
-  // Keep the active dot in sync with the visible card.
-  const dots = dotsContainer.querySelectorAll('.carousel-dot');
+  // Keep the active dot in sync with the card whose centre is closest to
+  // the carousel's centre. Using "closest to centre" (rather than an
+  // IntersectionObserver threshold) avoids the case where multiple cards
+  // are fully visible at once and the wrong one wins.
+  const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
   const cards = Array.from(carousel.querySelectorAll('.game-card'));
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.intersectionRatio < 0.5) return;
-      const idx = cards.indexOf(entry.target);
-      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+
+  const updateActiveDot = () => {
+    if (!cards.length) return;
+    const carouselRect = carousel.getBoundingClientRect();
+    const carouselCentre = carouselRect.left + carouselRect.width / 2;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    cards.forEach((card, i) => {
+      const r = card.getBoundingClientRect();
+      const cardCentre = r.left + r.width / 2;
+      const dist = Math.abs(cardCentre - carouselCentre);
+      if (dist < bestDist) { bestDist = dist; bestIdx = i; }
     });
-  }, { root: carousel, threshold: 0.5 });
-  cards.forEach((c) => observer.observe(c));
+    dots.forEach((d, i) => d.classList.toggle('active', i === bestIdx));
+  };
+
+  let scrollFrame = 0;
+  carousel.addEventListener('scroll', () => {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      updateActiveDot();
+    });
+  }, { passive: true });
+  window.addEventListener('resize', updateActiveDot);
+  // Initial sync once layout has settled.
+  requestAnimationFrame(updateActiveDot);
 
   // Mouse drag to scroll the carousel on desktop.
   let isDown = false, startX = 0, scrollLeft = 0;

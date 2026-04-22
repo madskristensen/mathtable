@@ -247,6 +247,8 @@ body {
 /* --- Game carousel --- */
 .carousel-wrapper {
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -337,11 +339,10 @@ body {
   .game-card:hover::after {
     animation: card-shine 0.55s ease forwards;
   }
-  .game-card:hover  { transform: translateY(-5px) scale(1.03); box-shadow: 0 18px 40px rgba(0,0,0,0.28); }
-  .game-card:hover .game-card-icon { transform: scale(1.12) rotate(-4deg); }
+  .game-card:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.28); }
 }
 
-.game-card:active { transform: scale(0.97); }
+.game-card:active { transform: none; }
 
 .game-card-icon {
   font-size: 4.5rem;
@@ -357,6 +358,50 @@ body {
   line-height: 1.2;
   margin-bottom: 0.35rem;
   color: var(--card-accent);
+}
+
+.game-card-category {
+  /* deprecated: category is now shown as a header above each group */
+  display: none;
+}
+
+/* Each category becomes a vertical group: a header on top, then a row of
+   that category's cards beneath. Groups are flex items in the carousel. */
+.category-group {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-right: 1.25rem;
+}
+.category-group:last-child {
+  margin-right: 0;
+}
+.category-cards {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Horizontal label that sits above the first card of each category. */
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.25rem;
+  user-select: none;
+}
+.category-header-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.category-header-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #fff;
+  opacity: 0.85;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
 .game-card-desc {
@@ -387,6 +432,7 @@ body {
   gap: 0.45rem;
   align-items: center;
   justify-content: center;
+  margin-bottom: 1.5rem;
 }
 
 .carousel-dot {
