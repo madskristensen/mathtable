@@ -8,7 +8,7 @@ A fast offline-friendly PWA that now acts as a hub for multiple kids learning ga
 
 ## Games
 
-- ✖️ **Multiplication Table** — includes Quick Game, Practice, Challenge, and Multiplication Map sub-games.
+- 🔢 **Multiplication** — includes Quick Game, Practice, Challenge, and Multiplication Map sub-games.
 - 🕒 **Tell Time (Analog Clock)** — read an analog clock and pick the matching digital time.
 
 ## Shared Features

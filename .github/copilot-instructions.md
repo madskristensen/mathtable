@@ -12,7 +12,7 @@ docs/
   style.css            All shared + game-specific styles
   app.js               Hub framework — state, routing, session loop
   games/
-    multiplication.js  Multiplication Table game module
+    multiplication.js  Multiplication game module
     clock.js           Analog Clock game module
   sw.js                Service worker (cache-first, update CACHE_NAME on asset changes)
   manifest.json        PWA manifest

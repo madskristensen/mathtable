@@ -211,7 +211,17 @@ body {
   cursor: pointer;
 }
 
-.game-card-icon { font-size: 1.6rem; }
+.game-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.game-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
 .game-card-title { font-size: 1.1rem; font-weight: 800; }
 .game-card-desc { font-size: 0.86rem; opacity: 0.75; }
 .game-card-score { font-size: 0.78rem; font-weight: 800; opacity: 0.8; }

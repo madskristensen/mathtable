@@ -5,8 +5,8 @@ const MASCOT_ANIMATION_DURATION_MS = 450;
 
 const GAME_REGISTRY = {
   multiplication: {
-    title: 'Multiplication Table',
-    icon: '✖️',
+    title: 'Multiplication',
+    icon: '🔢',
     description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
     defaultMode: 'quick',
     loader: () => import('./games/multiplication.js'),
@@ -208,8 +208,10 @@ async function renderGameCards() {
     const best = getHighScore(gameId, game.defaultMode || null);
     const highScoreLabel = best ? `High score: ${best.score}` : 'High score: —';
     card.innerHTML = `
-      <span class="game-card-icon">${game.icon}</span>
-      <span class="game-card-title">${game.title}</span>
+      <span class="game-card-header">
+        <span class="game-card-icon">${game.icon}</span>
+        <span class="game-card-title">${game.title}</span>
+      </span>
       <span class="game-card-desc">${game.description}</span>
       <span class="game-card-score">${highScoreLabel}</span>
     `;
