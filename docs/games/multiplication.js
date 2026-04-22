@@ -2,6 +2,13 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+const MODE_IDS = {
+  QUICK: 'quick',
+  PRACTICE: 'practice',
+  CHALLENGE: 'challenge',
+  MAP: 'map',
+};
+
 function shuffle(arr) {
   const next = [...arr];
   for (let i = next.length - 1; i > 0; i--) {
@@ -89,17 +96,17 @@ export const game = {
   title: 'Multiplication Table',
   icon: '✖️',
   description: 'Solve multiplication facts quickly.',
-  defaultMode: 'quick',
+  defaultMode: MODE_IDS.QUICK,
   modes: [
     {
-      id: 'quick',
+      id: MODE_IDS.QUICK,
       title: 'Quick Game',
       icon: '⚡',
       description: '10 random facts with score and streak.',
       kind: 'play',
     },
     {
-      id: 'practice',
+      id: MODE_IDS.PRACTICE,
       title: 'Practice',
       icon: '📚',
       description: 'Pick one table and drill it.',
@@ -111,14 +118,14 @@ export const game = {
       },
     },
     {
-      id: 'challenge',
+      id: MODE_IDS.CHALLENGE,
       title: 'Challenge',
       icon: '🏆',
       description: 'Score as much as possible in 60 seconds.',
       kind: 'play',
     },
     {
-      id: 'map',
+      id: MODE_IDS.MAP,
       title: 'Multiplication Map',
       icon: '🗺️',
       description: 'See mastery across all 144 facts.',
@@ -126,14 +133,14 @@ export const game = {
     },
   ],
   initSession(modeId, modeConfig, baseSession) {
-    if (modeId === 'practice') {
+    if (modeId === MODE_IDS.PRACTICE) {
       return {
         maxRounds: 15,
         table: modeConfig.table || 2,
       };
     }
 
-    if (modeId === 'challenge') {
+    if (modeId === MODE_IDS.CHALLENGE) {
       return {
         maxRounds: null,
         timedSeconds: 60,
@@ -145,7 +152,7 @@ export const game = {
     };
   },
   createQuestion(session) {
-    const isPractice = session.modeId === 'practice';
+    const isPractice = session.modeId === MODE_IDS.PRACTICE;
     const a = isPractice ? Number(session.table || 2) : randomInt(1, 12);
     const b = randomInt(1, 12);
     const correct = a * b;
@@ -163,7 +170,7 @@ export const game = {
     };
   },
   renderModeView(modeId, context) {
-    if (modeId !== 'map') return '<p class="mode-view-empty">Mode not available.</p>';
+    if (modeId !== MODE_IDS.MAP) return '<p class="mode-view-empty">Mode not available.</p>';
     return renderProgressMap(context.stats || {});
   },
 };

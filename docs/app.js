@@ -6,6 +6,7 @@ const GAME_REGISTRY = {
     title: 'Multiplication Table',
     icon: '✖️',
     description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
+    defaultMode: 'quick',
     loader: () => import('./games/multiplication.js'),
   },
   clock: {
@@ -523,8 +524,9 @@ function submitAnswer(value, selectedButton) {
     setFeedback(`Oops! Try the next one ${getMascot()}`, 'wrong-fb');
   }
 
-  if (state.currentQuestion.meta?.fact) {
-    recordProblemResult(state.currentQuestion.meta.fact.a, state.currentQuestion.meta.fact.b, isCorrect);
+  const fact = state.currentQuestion.meta && state.currentQuestion.meta.fact;
+  if (fact) {
+    recordProblemResult(fact.a, fact.b, isCorrect);
   }
 
   revealAnswer(isCorrect, selectedButton);
@@ -549,7 +551,8 @@ function endGame() {
   stats.totalCorrect += session.correct;
   saveStats(stats);
 
-  const trackScores = session.total > 0 && session.modeId !== 'map';
+  // Skip high score entries when no question was answered (for example, an immediate timeout).
+  const trackScores = session.total > 0;
   const isHighScore = trackScores
     ? saveHighScore(session.gameId, session.modeId, session.score, session.correct, session.total)
     : false;
@@ -623,14 +626,11 @@ async function init() {
   updateMascotDisplay();
   showScreen('home');
 
-  const gameSummaries = await Promise.all(
-    Object.entries(GAME_REGISTRY).map(async ([gameId, metadata]) => {
-      const game = await loadGame(gameId);
-      const defaultMode = game.defaultMode || null;
-      const best = getHighScore(gameId, defaultMode);
-      return best ? `${metadata.title} best ${best.score}` : null;
-    }),
-  );
+  const gameSummaries = Object.entries(GAME_REGISTRY).map(([gameId, metadata]) => {
+    const defaultMode = metadata.defaultMode || null;
+    const best = getHighScore(gameId, defaultMode);
+    return best ? `${metadata.title} best ${best.score}` : null;
+  });
 
   const filteredSummaries = gameSummaries.filter(Boolean);
   if (filteredSummaries.length > 0) {
