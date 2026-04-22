@@ -41,9 +41,14 @@ body[data-theme='dark'] {
 html, body {
   width: 100%;
   height: 100%;
-  height: -webkit-fill-available;
   min-height: 100%;
   overflow-x: hidden;
+}
+
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+  }
 }
 
 body {
@@ -63,7 +68,6 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
-  min-height: -webkit-fill-available;
   position: relative;
   overflow: hidden;
 }
