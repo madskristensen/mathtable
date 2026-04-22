@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
+const MASCOT_ANIMATION_DURATION_MS = 460;
 
 const GAME_REGISTRY = {
   multiplication: {
@@ -157,7 +158,7 @@ function animateMascotReaction(isCorrect) {
   state.mascotReactionTimeout = setTimeout(() => {
     mascot.classList.remove('celebrate', 'shake');
     state.mascotReactionTimeout = null;
-  }, 460);
+  }, MASCOT_ANIMATION_DURATION_MS);
 }
 
 function updateHomeStats() {
