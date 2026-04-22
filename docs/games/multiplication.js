@@ -108,7 +108,7 @@ export const game = {
     {
       id: MODE_IDS.PRACTICE,
       title: 'Practice',
-      icon: '📚',
+      icon: '✏️',
       description: 'Pick one table and drill it.',
       kind: 'play',
       selection: {

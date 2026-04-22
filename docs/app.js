@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
+const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
 
 const GAME_REGISTRY = {
@@ -12,7 +13,8 @@ const GAME_REGISTRY = {
   clock: {
     title: 'Tell Time (Analog Clock)',
     icon: '🕒',
-    description: 'Read the analog clock and pick the time.',
+    description: 'Quick Game, Practice, and Challenge.',
+    defaultMode: 'quick',
     loader: () => import('./games/clock.js'),
   },
 };
@@ -30,6 +32,7 @@ const state = {
   timeLeft: 0,
   pendingGameId: null,
   pendingMode: null,
+  isHandlingPopState: false,
 };
 
 function defaultStats() {
@@ -88,14 +91,50 @@ function getVisibleDailyStreak(stats) {
   return diff > 1 ? 0 : stats.dailyStreak;
 }
 
-function showScreen(id) {
+function showScreen(id, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
   document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
   document.getElementById(`screen-${id}`).classList.add('active');
+
+  if (skipHistory || state.isHandlingPopState) return;
+
+  const nextState = { screen: id };
+  if (replaceHistory) {
+    window.history.replaceState(nextState, '', window.location.href);
+  } else {
+    window.history.pushState(nextState, '', window.location.href);
+  }
 }
 
 function getMascot() {
   const mascot = loadStats().mascot;
   return ANIMALS.includes(mascot) ? mascot : DEFAULT_MASCOT;
+}
+
+function getSystemTheme() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
+function getSavedTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  return savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : null;
+}
+
+function setTheme(theme) {
+  document.body.dataset.theme = theme;
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    toggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+  }
+}
+
+function initTheme() {
+  const initialTheme = getSavedTheme() || getSystemTheme();
+  setTheme(initialTheme);
 }
 
 function updateMascotDisplay() {
@@ -146,10 +185,13 @@ async function renderGameCards() {
     const game = GAME_REGISTRY[gameId];
     const card = document.createElement('button');
     card.className = 'game-card';
+    const best = getHighScore(gameId, game.defaultMode || null);
+    const highScoreLabel = best ? `High score: ${best.score}` : 'High score: —';
     card.innerHTML = `
       <span class="game-card-icon">${game.icon}</span>
       <span class="game-card-title">${game.title}</span>
       <span class="game-card-desc">${game.description}</span>
+      <span class="game-card-score">${highScoreLabel}</span>
     `;
     card.addEventListener('click', () => startGame(gameId));
     grid.appendChild(card);
@@ -180,6 +222,20 @@ function saveHighScore(gameId, modeId, score, correct, total) {
 
   const best = stats.highScores[key][0];
   return best && best.score === score;
+}
+
+function updateHomeSubtitle() {
+  const gameSummaries = Object.entries(GAME_REGISTRY).map(([gameId, metadata]) => {
+    const defaultMode = metadata.defaultMode || null;
+    const best = getHighScore(gameId, defaultMode);
+    return best ? `${metadata.title} best ${best.score}` : null;
+  });
+
+  const filteredSummaries = gameSummaries.filter(Boolean);
+  const subtitle = document.querySelector('.subtitle');
+  subtitle.textContent = filteredSummaries.length > 0
+    ? `${filteredSummaries.join(' • ')}.`
+    : 'Pick a game and keep your streak alive!';
 }
 
 function setFeedback(text, className = '') {
@@ -315,10 +371,15 @@ function renderModeCards(gameId, game) {
   getGameModes(game).forEach((mode) => {
     const btn = document.createElement('button');
     btn.className = 'mode-card';
+    const best = mode.kind === 'play' ? getHighScore(gameId, mode.id) : null;
+    const highScoreLabel = mode.kind === 'play'
+      ? (best ? `High score: ${best.score}` : 'High score: —')
+      : '';
     btn.innerHTML = `
       <span class="mode-card-icon">${mode.icon || '🎮'}</span>
       <span class="mode-card-title">${mode.title}</span>
       <span class="mode-card-desc">${mode.description || ''}</span>
+      <span class="mode-card-score">${highScoreLabel}</span>
     `;
     btn.addEventListener('click', () => chooseMode(gameId, mode.id));
     list.appendChild(btn);
@@ -574,7 +635,8 @@ function endGame() {
   updateHomeStats();
 }
 
-function goHome() {
+function goHome(options = {}) {
+  const { skipHistory = false } = options;
   stopSessionTimer();
   setTimerVisible(false);
 
@@ -587,10 +649,37 @@ function goHome() {
 
   updateHomeStats();
   updateMascotDisplay();
-  showScreen('home');
+  renderGameCards();
+  updateHomeSubtitle();
+  showScreen('home', { skipHistory });
+}
+
+function handlePopState(event) {
+  const target = event.state && event.state.screen ? event.state.screen : 'home';
+  state.isHandlingPopState = true;
+
+  if (target === 'home') {
+    goHome({ skipHistory: true });
+  } else {
+    const screen = document.getElementById(`screen-${target}`);
+    if (screen) {
+      showScreen(target, { skipHistory: true });
+    } else {
+      goHome({ skipHistory: true });
+    }
+  }
+
+  state.isHandlingPopState = false;
 }
 
 function bindEvents() {
+  window.addEventListener('popstate', handlePopState);
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const current = document.body.dataset.theme === 'dark' ? 'dark' : 'light';
+    setTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
   document.getElementById('game-back-btn').addEventListener('click', goHome);
   document.getElementById('btn-go-home').addEventListener('click', goHome);
   document.getElementById('btn-play-again').addEventListener('click', () => {
@@ -619,24 +708,14 @@ function bindEvents() {
 }
 
 async function init() {
+  initTheme();
   bindEvents();
   renderAnimalPicker();
   await renderGameCards();
   updateHomeStats();
   updateMascotDisplay();
-  showScreen('home');
-
-  const gameSummaries = Object.entries(GAME_REGISTRY).map(([gameId, metadata]) => {
-    const defaultMode = metadata.defaultMode || null;
-    const best = getHighScore(gameId, defaultMode);
-    return best ? `${metadata.title} best ${best.score}` : null;
-  });
-
-  const filteredSummaries = gameSummaries.filter(Boolean);
-  if (filteredSummaries.length > 0) {
-    const subtitle = document.querySelector('.subtitle');
-    subtitle.textContent = `${filteredSummaries.join(' • ')}.`;
-  }
+  updateHomeSubtitle();
+  showScreen('home', { replaceHistory: true });
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

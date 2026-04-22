@@ -1,4 +1,9 @@
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+const MODE_IDS = {
+  QUICK: 'quick',
+  PRACTICE: 'practice',
+  CHALLENGE: 'challenge',
+};
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -65,8 +70,57 @@ export const game = {
   title: 'Tell Time (Analog Clock)',
   icon: '🕒',
   description: 'Read the analog clock and pick the time.',
-  createQuestion() {
-    const hour = randomInt(1, 12);
+  defaultMode: MODE_IDS.QUICK,
+  modes: [
+    {
+      id: MODE_IDS.QUICK,
+      title: 'Quick Game',
+      icon: '⚡',
+      description: '10 random times with score and streak.',
+      kind: 'play',
+    },
+    {
+      id: MODE_IDS.PRACTICE,
+      title: 'Practice',
+      icon: '✏️',
+      description: 'Pick one hour and drill it.',
+      kind: 'play',
+      selection: {
+        key: 'hour',
+        label: 'Pick an hour',
+        options: Array.from({ length: 12 }, (_, index) => index + 1),
+      },
+    },
+    {
+      id: MODE_IDS.CHALLENGE,
+      title: 'Challenge',
+      icon: '🏆',
+      description: 'Score as much as possible in 60 seconds.',
+      kind: 'play',
+    },
+  ],
+  initSession(modeId, modeConfig, baseSession) {
+    if (modeId === MODE_IDS.PRACTICE) {
+      return {
+        maxRounds: 15,
+        hour: Number(modeConfig.hour || 1),
+      };
+    }
+
+    if (modeId === MODE_IDS.CHALLENGE) {
+      return {
+        maxRounds: null,
+        timedSeconds: 60,
+      };
+    }
+
+    return {
+      maxRounds: baseSession.maxRounds,
+    };
+  },
+  createQuestion(session) {
+    const isPractice = session && session.modeId === MODE_IDS.PRACTICE;
+    const hour = isPractice ? Number(session.hour || 1) : randomInt(1, 12);
     const minute = MINUTES[randomInt(0, MINUTES.length - 1)];
 
     return {
