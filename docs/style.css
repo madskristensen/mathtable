@@ -19,11 +19,11 @@
 }
 
 body[data-theme='dark'] {
-  --surface: rgba(21, 27, 44, 0.78);
-  --surface-strong: rgba(30, 39, 61, 0.9);
-  --surface-soft: rgba(15, 23, 42, 0.38);
+  --surface: rgba(30, 41, 59, 0.9);
+  --surface-strong: rgba(51, 65, 85, 0.95);
+  --surface-soft: rgba(30, 41, 59, 0.6);
   --text: #f8fafc;
-  --card-border: rgba(148, 163, 184, 0.28);
+  --card-border: rgba(148, 163, 184, 0.45);
   --bg-start: #1f2937;
   --bg-mid: #111827;
   --bg-end: #312e81;
@@ -39,10 +39,12 @@ body[data-theme='dark'] {
 html, body {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
+  min-height: 100dvh;
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: linear-gradient(145deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
@@ -50,7 +52,8 @@ body {
 
 #app {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
   position: relative;
   overflow: hidden;
 }
@@ -75,6 +78,7 @@ body {
 .game-body,
 .mode-content {
   padding: 1.5rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
 .home-content {
@@ -89,13 +93,9 @@ body {
 .logo {
   text-align: center;
   margin-top: 0.5rem;
-  position: relative;
 }
 
 .theme-toggle {
-  position: absolute;
-  right: -0.3rem;
-  top: -0.2rem;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 999px;
@@ -104,6 +104,24 @@ body {
   color: var(--white);
   font-size: 1.1rem;
   cursor: pointer;
+}
+
+.home-footer {
+  width: 100%;
+  max-width: 24rem;
+  margin-top: auto;
+  padding-top: 0.25rem;
+  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+}
+
+.home-footer-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .logo h1 {
@@ -196,6 +214,16 @@ body {
 .game-card-desc { font-size: 0.86rem; opacity: 0.75; }
 .game-card-score { font-size: 0.78rem; font-weight: 800; opacity: 0.8; }
 .game-card-score:empty { display: none; }
+
+body[data-theme='dark'] .game-card,
+body[data-theme='dark'] .mode-card {
+  background: linear-gradient(145deg, rgba(51, 65, 85, 0.92) 0%, rgba(30, 41, 59, 0.94) 100%);
+}
+
+body[data-theme='dark'] .game-card-desc,
+body[data-theme='dark'] .mode-card-desc {
+  opacity: 0.9;
+}
 
 .mode-content {
   height: 100%;
@@ -322,6 +350,28 @@ body {
   line-height: 1;
 }
 
+.mascot.celebrate {
+  animation: mascot-bounce 0.45s ease;
+}
+
+.mascot.shake {
+  animation: mascot-shake 0.45s ease;
+}
+
+@keyframes mascot-bounce {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-0.4rem) scale(1.08); }
+  70% { transform: translateY(0) scale(0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes mascot-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-11deg); }
+  50% { transform: rotate(11deg); }
+  75% { transform: rotate(-9deg); }
+}
+
 .timer {
   font-weight: 800;
 }
@@ -332,6 +382,8 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .prompt {

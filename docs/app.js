@@ -32,6 +32,7 @@ const state = {
   timeLeft: 0,
   pendingGameId: null,
   pendingMode: null,
+  mascotReactionTimeout: null,
   isHandlingPopState: false,
 };
 
@@ -139,6 +140,24 @@ function initTheme() {
 
 function updateMascotDisplay() {
   document.getElementById('mascot').textContent = getMascot();
+}
+
+function animateMascotReaction(isCorrect) {
+  const mascot = document.getElementById('mascot');
+  if (!mascot) return;
+
+  mascot.classList.remove('celebrate', 'shake');
+  void mascot.offsetWidth;
+  mascot.classList.add(isCorrect ? 'celebrate' : 'shake');
+
+  if (state.mascotReactionTimeout) {
+    clearTimeout(state.mascotReactionTimeout);
+  }
+
+  state.mascotReactionTimeout = setTimeout(() => {
+    mascot.classList.remove('celebrate', 'shake');
+    state.mascotReactionTimeout = null;
+  }, 460);
 }
 
 function updateHomeStats() {
@@ -580,9 +599,11 @@ function submitAnswer(value, selectedButton) {
     state.session.bestStreak = Math.max(state.session.bestStreak, state.session.streak);
     state.session.score += 10 + Math.min(state.session.streak * 2, 20);
     setFeedback(`Nice! ${getMascot()} +${10 + Math.min(state.session.streak * 2, 20)}`, 'correct-fb');
+    animateMascotReaction(true);
   } else {
     state.session.streak = 0;
     setFeedback(`Oops! Try the next one ${getMascot()}`, 'wrong-fb');
+    animateMascotReaction(false);
   }
 
   const fact = state.currentQuestion.meta && state.currentQuestion.meta.fact;
