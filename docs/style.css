@@ -8,6 +8,7 @@
   --surface-strong: rgba(255, 245, 230, 0.9);
   --surface-soft: rgba(255, 255, 255, 0.15);
   --text: #1c1917;
+  --text-on-light: var(--text);
   --white: #fff;
   --card-border: rgba(255, 255, 255, 0.35);
   --bg-start: #e8540a;
@@ -23,6 +24,7 @@ body[data-theme='dark'] {
   --surface-strong: rgba(51, 65, 85, 0.95);
   --surface-soft: rgba(30, 41, 59, 0.6);
   --text: #f8fafc;
+  --text-on-light: #1c1917;
   --card-border: rgba(148, 163, 184, 0.45);
   --bg-start: #1f2937;
   --bg-mid: #111827;
@@ -421,7 +423,7 @@ body[data-theme='dark'] .mode-card-desc {
   background: rgba(255, 255, 255, 0.92);
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--text);
+  color: var(--text-on-light);
 }
 
 .answer-btn.correct {
