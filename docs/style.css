@@ -380,8 +380,10 @@ body {
 }
 
 .clock-face {
-  width: 120px;
-  height: 120px;
+  --clock-size: 7.5rem;
+  --tick-distance: calc((var(--clock-size) / 2) - 1rem);
+  width: var(--clock-size);
+  height: var(--clock-size);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.95);
   border: 4px solid rgba(0, 0, 0, 0.25);
@@ -395,7 +397,8 @@ body {
   width: 3px;
   height: 12px;
   background: rgba(0, 0, 0, 0.45);
-  transform-origin: center 50px;
+  transform-origin: center var(--tick-distance);
+  transform: rotate(var(--tick-rotation)) translateY(calc((var(--clock-size) / -2) + 1rem));
 }
 
 .clock-hand {

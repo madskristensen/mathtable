@@ -27,7 +27,7 @@ function makeClockMarkup(hour12, minute) {
   const hourDeg = hourForRotation * 30 + minute * 0.5;
 
   const ticks = Array.from({ length: 12 })
-    .map((_, idx) => `<span class="clock-tick" style="transform: rotate(${idx * 30}deg) translateY(-44px)"></span>`)
+    .map((_, idx) => `<span class="clock-tick" style="--tick-rotation:${idx * 30}deg"></span>`)
     .join('');
 
   return `

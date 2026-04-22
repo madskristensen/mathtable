@@ -192,6 +192,7 @@ function renderQuestion() {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
     btn.innerHTML = answer.label;
+    btn.dataset.value = String(answer.value);
     btn.addEventListener('click', () => submitAnswer(answer.value, btn));
     answers.appendChild(btn);
   });
@@ -277,19 +278,12 @@ function lockAnswers() {
 function revealAnswer(isCorrect, selectedButton) {
   const { correctValue } = state.currentQuestion;
   document.querySelectorAll('.answer-btn').forEach((btn) => {
-    const value = btn.getAttribute('data-value') || btn.dataset.value;
+    const value = btn.dataset.value;
     if (value === String(correctValue)) {
       btn.classList.add('correct');
     }
   });
   if (!isCorrect && selectedButton) selectedButton.classList.add('wrong');
-}
-
-function renderAnswersWithValues() {
-  const answerButtons = document.querySelectorAll('.answer-btn');
-  state.currentQuestion.answers.forEach((answer, idx) => {
-    answerButtons[idx].dataset.value = String(answer.value);
-  });
 }
 
 function advanceRound() {
@@ -303,7 +297,6 @@ function advanceRound() {
   updateSessionDisplay();
   state.currentQuestion = state.currentGame.createQuestion(state.session);
   renderQuestion();
-  renderAnswersWithValues();
 }
 
 function submitAnswer(value, selectedButton) {
@@ -323,7 +316,6 @@ function submitAnswer(value, selectedButton) {
     setFeedback(`Oops! Try the next one ${getMascot()}`, 'wrong-fb');
   }
 
-  renderAnswersWithValues();
   revealAnswer(isCorrect, selectedButton);
   updateSessionDisplay();
 
@@ -386,14 +378,16 @@ async function init() {
   updateMascotDisplay();
   showScreen('home');
 
-  const topMultiplication = getHighScore('multiplication');
-  const topClock = getHighScore('clock');
-  if (topMultiplication || topClock) {
+  const gameSummaries = Object.entries(GAME_REGISTRY)
+    .map(([gameId, metadata]) => {
+      const best = getHighScore(gameId);
+      return best ? `${metadata.title} best ${best.score}` : null;
+    })
+    .filter(Boolean);
+
+  if (gameSummaries.length > 0) {
     const subtitle = document.querySelector('.subtitle');
-    const parts = [];
-    if (topMultiplication) parts.push(`Times table best ${topMultiplication.score}`);
-    if (topClock) parts.push(`Clock best ${topClock.score}`);
-    subtitle.textContent = `${parts.join(' • ')}.`;
+    subtitle.textContent = `${gameSummaries.join(' • ')}.`;
   }
 
   if ('serviceWorker' in navigator) {
