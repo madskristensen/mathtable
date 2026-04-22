@@ -392,13 +392,13 @@ body {
 
 .clock-tick {
   position: absolute;
-  left: calc(50% - 1.5px);
-  top: calc(50% - 6px);
+  left: 50%;
+  top: 50%;
   width: 3px;
   height: 12px;
   background: rgba(0, 0, 0, 0.45);
   transform-origin: center var(--tick-distance);
-  transform: rotate(var(--tick-rotation)) translateY(calc((var(--clock-size) / -2) + 1rem));
+  transform: translate(-50%, -50%) rotate(var(--tick-rotation));
 }
 
 .clock-hand {
