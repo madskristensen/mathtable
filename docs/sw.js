@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v19';
+const CACHE_NAME = 'kids-hub-v20';
 const ASSETS = [
   './',
   './index.html',
@@ -21,7 +21,14 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // Try a fast bulk add first; if any single asset 404s, fall back to
+      // adding them individually so one bad URL doesn't abort the whole
+      // install and leave the app without an offline cache.
+      cache.addAll(ASSETS).catch(() =>
+        Promise.all(ASSETS.map((a) => cache.add(a).catch(() => null)))
+      )
+    )
   );
   self.skipWaiting();
 });
