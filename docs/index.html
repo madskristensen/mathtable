@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Kids Learning Hub">
@@ -31,10 +32,7 @@
           <span class="daily-label">day streak</span>
         </div>
 
-        <div class="animal-picker">
-          <span class="animal-picker-label">Choose your animal</span>
-          <div class="animal-options" id="animal-options"></div>
-        </div>
+        <button class="mascot-btn" id="mascot-btn" aria-label="Change animal"></button>
 
         <div class="games-grid" id="games-grid"></div>
 
@@ -47,11 +45,6 @@
             <span class="stat-value" id="home-total">0</span>
             <span class="stat-label">Total Correct</span>
           </div>
-        </div>
-
-        <div class="home-footer">
-          <span class="home-footer-label">Theme</span>
-          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
         </div>
       </div>
     </div>
@@ -93,14 +86,14 @@
             <div class="timer" id="timer-display" style="display:none">⏱️ <span id="timer-value">60</span>s</div>
           </div>
         </div>
-        <div class="mascot" id="mascot">🦊</div>
-      </div>
+        </div>
 
-      <div class="game-body">
-        <div class="prompt" id="prompt"></div>
-        <div class="feedback" id="feedback"></div>
-        <div class="answers" id="answers"></div>
-      </div>
+        <div class="game-body">
+          <div class="mascot" id="mascot"></div>
+          <div class="prompt" id="prompt"></div>
+          <div class="feedback" id="feedback"></div>
+          <div class="answers" id="answers"></div>
+        </div>
     </div>
 
     <div id="screen-results" class="screen">
@@ -141,6 +134,13 @@
     </div>
 
     <canvas id="confetti-canvas"></canvas>
+
+    <div class="picker-overlay" id="picker-overlay" aria-hidden="true">
+      <div class="picker-sheet">
+        <p class="picker-sheet-label">Choose your animal</p>
+        <div class="animal-options" id="animal-options"></div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>

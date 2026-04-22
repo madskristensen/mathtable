@@ -31,15 +31,19 @@ function makeClockMarkup(hour12, minute) {
   const minuteDeg = minute * 6;
   const hourDeg = hourForRotation * 30 + minute * 0.5;
 
-  const ticks = Array.from({ length: 12 })
-    .map((_, idx) => `<span class="clock-tick" style="--tick-rotation:${idx * 30}deg"></span>`)
+  const numbers = Array.from({ length: 12 })
+    .map((_, idx) => {
+      const num = idx === 0 ? 12 : idx;
+      const angleDeg = idx * 30;
+      return `<span class="clock-number" style="--num-rotation:${angleDeg}deg">${num}</span>`;
+    })
     .join('');
 
   return `
     <div class="question-title">What time is shown?</div>
     <div class="clock-face-wrap">
       <div class="clock-face">
-        ${ticks}
+        ${numbers}
         <span class="clock-hand hour" style="transform: rotate(${hourDeg}deg)"></span>
         <span class="clock-hand minute" style="transform: rotate(${minuteDeg}deg)"></span>
         <span class="clock-center"></span>

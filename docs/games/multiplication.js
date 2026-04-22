@@ -9,29 +9,6 @@ const MODE_IDS = {
   MAP: 'map',
 };
 
-function shuffle(arr) {
-  const next = [...arr];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-
-function buildAnswers(correct) {
-  const set = new Set([correct]);
-  while (set.size < 4) {
-    const delta = randomInt(-12, 12);
-    const option = Math.max(0, correct + delta);
-    set.add(option);
-  }
-
-  return shuffle([...set]).map((value) => ({
-    value,
-    label: `<span class="answer-main">${value}</span>`,
-  }));
-}
-
 function getFactAccuracy(stats, a, b) {
   const key = `${a}x${b}`;
   const fact = stats.problems?.[key];
@@ -160,9 +137,9 @@ export const game = {
     return {
       prompt: `
         <div class="question-title">What is this?</div>
-        <div class="equation">${a} × ${b} = ?</div>
+        <div class="equation">${a} × ${b} = <span id="numpad-display" class="numpad-inline-display">?</span></div>
       `,
-      answers: buildAnswers(correct),
+      useNumpad: true,
       correctValue: correct,
       meta: {
         fact: { a, b },

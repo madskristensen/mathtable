@@ -1,5 +1,4 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
-const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
 const MAX_HIGH_SCORES = 10;
 const MASCOT_ANIMATION_DURATION_MS = 450;
@@ -19,6 +18,13 @@ const GAME_REGISTRY = {
     description: 'Quick Game, Practice, and Challenge.',
     defaultMode: 'quick',
     loader: () => import('./games/clock.js'),
+  },
+  timemath: {
+    title: 'Time Math',
+    icon: '⏱️',
+    description: 'Add and subtract time. Quick Game, Practice, and Challenge.',
+    defaultMode: 'quick',
+    loader: () => import('./games/timemath.js'),
   },
 };
 
@@ -169,34 +175,17 @@ function getMascot() {
   return ANIMALS.includes(mascot) ? mascot : DEFAULT_MASCOT;
 }
 
-function getSystemTheme() {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
-
-function getSavedTheme() {
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  return savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : null;
-}
-
-function setTheme(theme) {
-  document.body.dataset.theme = theme;
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
-  const toggle = document.getElementById('theme-toggle');
-  if (toggle) {
-    toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-    toggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
-  }
-}
-
-function initTheme() {
-  const initialTheme = getSavedTheme() || getSystemTheme();
-  setTheme(initialTheme);
+function applyAnimalTheme(animal) {
+  document.body.dataset.animal = animal || DEFAULT_MASCOT;
 }
 
 function updateMascotDisplay() {
-  document.getElementById('mascot').textContent = getMascot();
+  const mascot = getMascot();
+  const inGameEl = document.getElementById('mascot');
+  if (inGameEl) inGameEl.textContent = mascot;
+  const homeBtn = document.getElementById('mascot-btn');
+  if (homeBtn) homeBtn.textContent = mascot;
+  applyAnimalTheme(mascot);
 }
 
 function animateMascotReaction(isCorrect) {
@@ -224,6 +213,14 @@ function updateHomeStats() {
   document.getElementById('daily-count').textContent = getVisibleDailyStreak(stats);
 }
 
+function openAnimalPicker() {
+  document.getElementById('picker-overlay').classList.add('open');
+}
+
+function closeAnimalPicker() {
+  document.getElementById('picker-overlay').classList.remove('open');
+}
+
 function renderAnimalPicker() {
   const stats = loadStats();
   const root = document.getElementById('animal-options');
@@ -239,6 +236,7 @@ function renderAnimalPicker() {
       saveStats(next);
       renderAnimalPicker();
       updateMascotDisplay();
+      closeAnimalPicker();
     });
     root.appendChild(btn);
   });
@@ -368,16 +366,96 @@ function renderQuestion() {
   prompt.innerHTML = question.prompt;
   answers.innerHTML = '';
 
-  question.answers.forEach((answer) => {
-    const btn = document.createElement('button');
-    btn.className = 'answer-btn';
-    btn.innerHTML = answer.label;
-    btn.dataset.value = String(answer.value);
-    btn.addEventListener('click', () => submitAnswer(answer.value, btn));
-    answers.appendChild(btn);
-  });
+  if (question.useNumpad) {
+    renderNumpad(answers);
+  } else {
+    question.answers.forEach((answer) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.innerHTML = answer.label;
+      btn.dataset.value = String(answer.value);
+      btn.addEventListener('click', () => submitAnswer(answer.value, btn));
+      answers.appendChild(btn);
+    });
+  }
 
   setFeedback('');
+}
+
+function renderNumpad(container) {
+  const display = document.querySelector('#prompt .numpad-inline-display');
+  console.log('[numpad] renderNumpad called, display found:', display, 'prompt innerHTML:', document.getElementById('prompt')?.innerHTML);
+  const grid = document.createElement('div');
+  grid.className = 'numpad-grid';
+
+  const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '⌫', '0', '✓'];
+  keys.forEach((key) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'numpad-btn';
+    if (key === '⌫') btn.classList.add('numpad-back');
+    if (key === '✓') btn.classList.add('numpad-go');
+    btn.textContent = key;
+    btn.addEventListener('click', () => handleNumpadKey(key, display));
+    grid.appendChild(btn);
+  });
+
+  container.appendChild(grid);
+}
+
+function handleNumpadKey(key, display) {
+  console.log('[numpad] key pressed:', JSON.stringify(key), 'display:', display, 'session ended:', state.session?.ended);
+  if (state.session && state.session.ended) return;
+  if (!display) return;
+
+  const current = display.textContent === '?' ? '' : display.textContent;
+  if (key === '⌫') {
+    const next = current.slice(0, -1);
+    display.textContent = next === '' ? '?' : next;
+  } else if (key === '✓') {
+    const value = parseInt(current, 10);
+    if (current === '' || isNaN(value)) return;
+    submitNumpadAnswer(value);
+  } else {
+    if (current.length >= 4) return;
+    display.textContent = current + key;
+  }
+}
+
+function submitNumpadAnswer(value) {
+  document.querySelectorAll('.numpad-btn').forEach((btn) => { btn.disabled = true; });
+  const isCorrect = value === state.currentQuestion.correctValue;
+  state.session.total += 1;
+
+  if (isCorrect) {
+    state.session.correct += 1;
+    state.session.streak += 1;
+    state.session.bestStreak = Math.max(state.session.bestStreak, state.session.streak);
+    state.session.score += 10 + Math.min(state.session.streak * 2, 20);
+    setFeedback(`Nice! ${getMascot()} +${10 + Math.min(state.session.streak * 2, 20)}`, 'correct-fb');
+    animateMascotReaction(true);
+  } else {
+    state.session.streak = 0;
+    setFeedback(`Oops! The answer was ${state.currentQuestion.correctValue} ${getMascot()}`, 'wrong-fb');
+    animateMascotReaction(false);
+  }
+
+  const fact = state.currentQuestion.meta && state.currentQuestion.meta.fact;
+  if (fact) {
+    recordProblemResult(fact.a, fact.b, isCorrect);
+  }
+
+  const display = document.querySelector('#prompt .numpad-inline-display');
+  if (display) {
+    display.classList.add(isCorrect ? 'correct' : 'wrong');
+  }
+
+  updateSessionDisplay();
+
+  setTimeout(() => {
+    if (!state.session || state.session.ended) return;
+    advanceRound();
+  }, 900);
 }
 
 function launchConfetti() {
@@ -856,9 +934,9 @@ function handlePopState(event) {
 function bindEvents() {
   window.addEventListener('popstate', handlePopState);
 
-  document.getElementById('theme-toggle').addEventListener('click', () => {
-    const current = document.body.dataset.theme === 'dark' ? 'dark' : 'light';
-    setTheme(current === 'dark' ? 'light' : 'dark');
+  document.getElementById('mascot-btn').addEventListener('click', openAnimalPicker);
+  document.getElementById('picker-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeAnimalPicker();
   });
 
   document.getElementById('game-back-btn').addEventListener('click', goHome);
@@ -889,7 +967,6 @@ function bindEvents() {
 }
 
 async function init() {
-  initTheme();
   bindEvents();
   renderAnimalPicker();
   await renderGameCards();
@@ -897,6 +974,13 @@ async function init() {
   updateMascotDisplay();
   updateHomeSubtitle();
   await navigateToRoute(getHashRoute(), { skipHistory: true });
+
+  // Show picker on first ever load (no animal saved yet)
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const hasSavedAnimal = raw && JSON.parse(raw).mascot;
+  if (!hasSavedAnimal) {
+    openAnimalPicker();
+  }
 
   const activeScreen = document.querySelector('.screen.active');
   const activeScreenId = activeScreen ? activeScreen.id.replace('screen-', '') : 'home';
