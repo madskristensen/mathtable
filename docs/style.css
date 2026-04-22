@@ -260,7 +260,7 @@ body {
   font-size: 1.05rem;
   font-weight: 800;
   background: rgba(255, 255, 255, 0.92);
-  color: var(--text);
+  color: var(--text-on-light);
 }
 
 .stats-bar {
