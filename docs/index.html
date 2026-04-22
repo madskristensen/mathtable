@@ -51,6 +51,31 @@
       </div>
     </div>
 
+    <div id="screen-mode-menu" class="screen">
+      <div class="mode-content">
+        <button class="back-btn" id="mode-menu-back-btn">←</button>
+        <h2 id="mode-game-title">Game Modes</h2>
+        <p class="mode-subtitle">Pick how you want to play</p>
+        <div class="mode-list" id="mode-list"></div>
+      </div>
+    </div>
+
+    <div id="screen-mode-option-picker" class="screen">
+      <div class="mode-content">
+        <button class="back-btn" id="mode-option-back-btn">←</button>
+        <h2 id="mode-option-title">Pick an option</h2>
+        <div class="table-grid" id="mode-option-grid"></div>
+      </div>
+    </div>
+
+    <div id="screen-mode-view" class="screen">
+      <div class="mode-content mode-view-content">
+        <button class="back-btn" id="mode-view-back-btn">←</button>
+        <h2 id="mode-view-title">View</h2>
+        <div id="mode-view-body" class="mode-view-body"></div>
+      </div>
+    </div>
+
     <div id="screen-game" class="screen">
       <div class="game-header">
         <button class="back-btn" id="game-back-btn">✕</button>
@@ -60,6 +85,7 @@
             <div class="streak"><span id="streak-count">0</span>🔥</div>
             <div class="score">Score <span id="score-count">0</span></div>
             <div class="progress" id="round-progress">1/10</div>
+            <div class="timer" id="timer-display" style="display:none">⏱️ <span id="timer-value">60</span>s</div>
           </div>
         </div>
         <div class="mascot" id="mascot">🦊</div>

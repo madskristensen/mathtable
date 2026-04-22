@@ -59,7 +59,8 @@ body {
 
 .home-content,
 .results-content,
-.game-body {
+.game-body,
+.mode-content {
   padding: 1.5rem;
 }
 
@@ -165,6 +166,67 @@ body {
 .game-card-title { font-size: 1.1rem; font-weight: 800; }
 .game-card-desc { font-size: 0.86rem; opacity: 0.75; }
 
+.mode-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.mode-content h2,
+.mode-subtitle {
+  color: var(--white);
+  text-align: center;
+}
+
+.mode-subtitle {
+  opacity: 0.85;
+}
+
+.mode-list {
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mode-card {
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mode-card-icon { font-size: 1.5rem; }
+.mode-card-title { font-size: 1.06rem; font-weight: 800; }
+.mode-card-desc { font-size: 0.86rem; opacity: 0.75; }
+
+.table-grid {
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.table-btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  min-height: 2.8rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+}
+
 .stats-bar {
   display: flex;
   gap: 1.4rem;
@@ -224,6 +286,10 @@ body {
 .mascot {
   font-size: 2.7rem;
   line-height: 1;
+}
+
+.timer {
+  font-weight: 800;
 }
 
 .game-body {
@@ -431,6 +497,62 @@ body {
   border-radius: 50%;
   background: #111827;
   translate: -50% -50%;
+}
+
+.mode-view-content {
+  align-items: center;
+}
+
+.mode-view-body {
+  width: 100%;
+  max-width: 25rem;
+  color: var(--white);
+}
+
+.mode-view-empty,
+.mode-view-copy {
+  text-align: center;
+  margin-bottom: 0.65rem;
+  opacity: 0.9;
+}
+
+.multiplication-map-grid {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 0.22rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.35rem;
+  border-radius: 0.65rem;
+}
+
+.map-header,
+.map-cell {
+  min-height: 1.35rem;
+  border-radius: 0.35rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.map-header {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.map-cell {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.map-cell.map-learning { background: rgba(239, 68, 68, 0.65); }
+.map-cell.map-good { background: rgba(245, 158, 11, 0.7); }
+.map-cell.map-mastered { background: rgba(16, 185, 129, 0.78); }
+
+.multiplication-map-summary {
+  margin-top: 0.55rem;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.95;
 }
 
 @media (max-height: 42rem) {

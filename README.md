@@ -8,12 +8,13 @@ A fast offline-friendly PWA that now acts as a hub for multiple kids learning ga
 
 ## Games
 
-- ✖️ **Multiplication Table** — solve multiplication facts with streak-based scoring.
+- ✖️ **Multiplication Table** — includes Quick Game, Practice, Challenge, and Multiplication Map sub-games.
 - 🕒 **Tell Time (Analog Clock)** — read an analog clock and pick the matching digital time.
 
 ## Shared Features
 
 - 🧩 Home hub with one card per game
+- 🕹️ Per-game sub-game/menu framework
 - 🔥 Shared daily streak and best streak tracking
 - 🏅 Shared per-game high scores
 - 🐾 Emoji animal picker used across all games

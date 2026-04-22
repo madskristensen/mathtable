@@ -1,9 +1,11 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
+const DEFAULT_ROUNDS = 10;
+
 const GAME_REGISTRY = {
   multiplication: {
     title: 'Multiplication Table',
     icon: '✖️',
-    description: 'Solve multiplication facts quickly.',
+    description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
     loader: () => import('./games/multiplication.js'),
   },
   clock: {
@@ -14,15 +16,19 @@ const GAME_REGISTRY = {
   },
 };
 
-const GAME_COUNT = 10;
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];
 const DEFAULT_MASCOT = ANIMALS[0];
 
 const state = {
   loadedGames: {},
   currentGame: null,
+  currentMode: null,
   currentQuestion: null,
   session: null,
+  timerInterval: null,
+  timeLeft: 0,
+  pendingGameId: null,
+  pendingMode: null,
 };
 
 function defaultStats() {
@@ -33,6 +39,7 @@ function defaultStats() {
     lastPlayDate: null,
     mascot: DEFAULT_MASCOT,
     highScores: {},
+    problems: {},
   };
 }
 
@@ -47,6 +54,7 @@ function loadStats() {
       ...parsed,
       mascot,
       highScores: parsed.highScores || {},
+      problems: parsed.problems || {},
     };
   } catch {
     return defaultStats();
@@ -147,14 +155,16 @@ async function renderGameCards() {
   }
 }
 
-function getHighScore(gameId) {
+function getHighScore(gameId, modeId = null) {
   const stats = loadStats();
-  return (stats.highScores[gameId] || [])[0] || null;
+  const key = modeId ? `${gameId}:${modeId}` : gameId;
+  return (stats.highScores[key] || [])[0] || null;
 }
 
-function saveHighScore(gameId, score, correct, total) {
+function saveHighScore(gameId, modeId, score, correct, total) {
   const stats = loadStats();
-  const list = stats.highScores[gameId] || [];
+  const key = modeId ? `${gameId}:${modeId}` : gameId;
+  const list = stats.highScores[key] || [];
 
   list.push({
     score,
@@ -164,10 +174,10 @@ function saveHighScore(gameId, score, correct, total) {
   });
 
   list.sort((a, b) => b.score - a.score);
-  stats.highScores[gameId] = list.slice(0, 10);
+  stats.highScores[key] = list.slice(0, 10);
   saveStats(stats);
 
-  const best = stats.highScores[gameId][0];
+  const best = stats.highScores[key][0];
   return best && best.score === score;
 }
 
@@ -179,9 +189,17 @@ function setFeedback(text, className = '') {
 
 function updateSessionDisplay() {
   const session = state.session;
+  if (!session) return;
+
   document.getElementById('streak-count').textContent = session.streak;
   document.getElementById('score-count').textContent = session.score;
-  document.getElementById('round-progress').textContent = `${session.round + 1}/${GAME_COUNT}`;
+
+  const progressEl = document.getElementById('round-progress');
+  if (session.maxRounds) {
+    progressEl.textContent = `${session.round + 1}/${session.maxRounds}`;
+  } else {
+    progressEl.textContent = `${session.total} answered`;
+  }
 }
 
 function renderQuestion() {
@@ -249,13 +267,144 @@ function launchConfetti() {
   tick();
 }
 
-async function startGame(gameId) {
-  const game = await loadGame(gameId);
-  const stats = loadStats();
-  updateDailyStreak(stats);
+function stopSessionTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
 
-  state.currentGame = game;
-  state.session = {
+function setTimerVisible(isVisible) {
+  const timer = document.getElementById('timer-display');
+  timer.style.display = isVisible ? '' : 'none';
+}
+
+function startSessionTimer(seconds) {
+  stopSessionTimer();
+  state.timeLeft = seconds;
+  const timerValue = document.getElementById('timer-value');
+  timerValue.textContent = String(state.timeLeft);
+  setTimerVisible(true);
+
+  state.timerInterval = setInterval(() => {
+    state.timeLeft -= 1;
+    timerValue.textContent = String(Math.max(state.timeLeft, 0));
+
+    if (state.timeLeft <= 0) {
+      stopSessionTimer();
+      if (state.session && !state.session.ended) {
+        endGame();
+      }
+    }
+  }, 1000);
+}
+
+function getGameModes(game) {
+  return Array.isArray(game.modes) ? game.modes : [];
+}
+
+function getMode(game, modeId) {
+  return getGameModes(game).find((mode) => mode.id === modeId) || null;
+}
+
+function renderModeCards(gameId, game) {
+  const list = document.getElementById('mode-list');
+  list.innerHTML = '';
+
+  getGameModes(game).forEach((mode) => {
+    const btn = document.createElement('button');
+    btn.className = 'mode-card';
+    btn.innerHTML = `
+      <span class="mode-card-icon">${mode.icon || '🎮'}</span>
+      <span class="mode-card-title">${mode.title}</span>
+      <span class="mode-card-desc">${mode.description || ''}</span>
+    `;
+    btn.addEventListener('click', () => chooseMode(gameId, mode.id));
+    list.appendChild(btn);
+  });
+}
+
+function renderModeSelection(gameId, game) {
+  state.pendingGameId = gameId;
+  state.pendingMode = null;
+
+  document.getElementById('mode-game-title').textContent = game.title;
+  renderModeCards(gameId, game);
+  showScreen('mode-menu');
+}
+
+function renderModeOptionPicker(mode) {
+  state.pendingMode = mode;
+  const optionsWrap = document.getElementById('mode-option-grid');
+  optionsWrap.innerHTML = '';
+
+  const selection = mode.selection;
+  document.getElementById('mode-option-title').textContent = selection.label;
+
+  selection.options.forEach((option) => {
+    const value = typeof option === 'object' ? option.value : option;
+    const label = typeof option === 'object' ? option.label : String(option);
+
+    const btn = document.createElement('button');
+    btn.className = 'table-btn';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      startMode(state.pendingGameId, mode.id, {
+        [selection.key]: value,
+      });
+    });
+    optionsWrap.appendChild(btn);
+  });
+
+  showScreen('mode-option-picker');
+}
+
+function updateModeViewTitle(title) {
+  document.getElementById('mode-view-title').textContent = title;
+}
+
+async function chooseMode(gameId, modeId) {
+  const game = await loadGame(gameId);
+  const mode = getMode(game, modeId);
+  if (!mode) {
+    startMode(gameId, null);
+    return;
+  }
+
+  if (mode.selection) {
+    renderModeOptionPicker(mode);
+    return;
+  }
+
+  if (mode.kind === 'view') {
+    showModeView(game, mode);
+    return;
+  }
+
+  startMode(gameId, mode.id);
+}
+
+function showModeView(game, mode) {
+  const viewRoot = document.getElementById('mode-view-body');
+  updateModeViewTitle(`${game.title} — ${mode.title}`);
+
+  if (typeof game.renderModeView === 'function') {
+    viewRoot.innerHTML = game.renderModeView(mode.id, { stats: loadStats() });
+  } else {
+    viewRoot.innerHTML = '<p class="mode-view-empty">Nothing to show yet.</p>';
+  }
+
+  showScreen('mode-view');
+}
+
+function startMode(gameId, modeId, modeConfig = {}) {
+  stopSessionTimer();
+  setTimerVisible(false);
+
+  const game = state.currentGame;
+  const mode = modeId ? getMode(game, modeId) : null;
+
+  const session = {
     round: 0,
     score: 0,
     streak: 0,
@@ -263,14 +412,48 @@ async function startGame(gameId) {
     correct: 0,
     total: 0,
     gameId,
+    modeId,
+    modeConfig,
+    maxRounds: DEFAULT_ROUNDS,
+    timedSeconds: 0,
+    ended: false,
   };
 
-  document.getElementById('game-title').textContent = game.title;
+  if (typeof game.initSession === 'function') {
+    Object.assign(session, game.initSession(modeId, modeConfig, session) || {});
+  }
+
+  state.currentMode = mode;
+  state.session = session;
+
+  const modeSuffix = mode ? ` — ${mode.title}` : '';
+  document.getElementById('game-title').textContent = `${game.title}${modeSuffix}`;
   updateMascotDisplay();
   updateSessionDisplay();
+
   state.currentQuestion = game.createQuestion(state.session);
   renderQuestion();
   showScreen('game');
+
+  if (session.timedSeconds > 0) {
+    startSessionTimer(session.timedSeconds);
+  }
+}
+
+async function startGame(gameId) {
+  const game = await loadGame(gameId);
+  const stats = loadStats();
+  updateDailyStreak(stats);
+
+  state.currentGame = game;
+
+  const modes = getGameModes(game);
+  if (modes.length > 0) {
+    renderModeSelection(gameId, game);
+    return;
+  }
+
+  startMode(gameId, null);
 }
 
 function lockAnswers() {
@@ -290,10 +473,28 @@ function revealAnswer(isCorrect, selectedButton) {
   if (!isCorrect && selectedButton) selectedButton.classList.add('wrong');
 }
 
+function recordProblemResult(a, b, correct) {
+  const stats = loadStats();
+  const key = `${a}x${b}`;
+  if (!stats.problems[key]) {
+    stats.problems[key] = { correct: 0, wrong: 0 };
+  }
+
+  if (correct) {
+    stats.problems[key].correct += 1;
+  } else {
+    stats.problems[key].wrong += 1;
+  }
+
+  saveStats(stats);
+}
+
 function advanceRound() {
+  if (!state.session || state.session.ended) return;
+
   state.session.round += 1;
 
-  if (state.session.round >= GAME_COUNT) {
+  if (state.session.maxRounds && state.session.round >= state.session.maxRounds) {
     endGame();
     return;
   }
@@ -304,6 +505,8 @@ function advanceRound() {
 }
 
 function submitAnswer(value, selectedButton) {
+  if (!state.session || state.session.ended) return;
+
   lockAnswers();
 
   const isCorrect = value === state.currentQuestion.correctValue;
@@ -320,13 +523,25 @@ function submitAnswer(value, selectedButton) {
     setFeedback(`Oops! Try the next one ${getMascot()}`, 'wrong-fb');
   }
 
+  if (state.currentQuestion.meta?.fact) {
+    recordProblemResult(state.currentQuestion.meta.fact.a, state.currentQuestion.meta.fact.b, isCorrect);
+  }
+
   revealAnswer(isCorrect, selectedButton);
   updateSessionDisplay();
 
-  setTimeout(advanceRound, 900);
+  setTimeout(() => {
+    if (!state.session || state.session.ended) return;
+    advanceRound();
+  }, 900);
 }
 
 function endGame() {
+  if (!state.session || state.session.ended) return;
+
+  state.session.ended = true;
+  stopSessionTimer();
+
   const session = state.session;
   const stats = loadStats();
 
@@ -334,7 +549,10 @@ function endGame() {
   stats.totalCorrect += session.correct;
   saveStats(stats);
 
-  const isHighScore = saveHighScore(session.gameId, session.score, session.correct, session.total);
+  const trackScores = session.total > 0 && session.modeId !== 'map';
+  const isHighScore = trackScores
+    ? saveHighScore(session.gameId, session.modeId, session.score, session.correct, session.total)
+    : false;
   document.getElementById('new-high-score').style.display = isHighScore ? '' : 'none';
 
   document.getElementById('result-score').textContent = session.score;
@@ -354,9 +572,16 @@ function endGame() {
 }
 
 function goHome() {
+  stopSessionTimer();
+  setTimerVisible(false);
+
   state.currentGame = null;
+  state.currentMode = null;
   state.currentQuestion = null;
   state.session = null;
+  state.pendingGameId = null;
+  state.pendingMode = null;
+
   updateHomeStats();
   updateMascotDisplay();
   showScreen('home');
@@ -366,11 +591,27 @@ function bindEvents() {
   document.getElementById('game-back-btn').addEventListener('click', goHome);
   document.getElementById('btn-go-home').addEventListener('click', goHome);
   document.getElementById('btn-play-again').addEventListener('click', () => {
-    if (!state.session) {
+    if (!state.currentGame || !state.session) {
       goHome();
       return;
     }
-    startGame(state.session.gameId);
+    startMode(state.session.gameId, state.session.modeId, state.session.modeConfig || {});
+  });
+
+  document.getElementById('mode-menu-back-btn').addEventListener('click', goHome);
+  document.getElementById('mode-option-back-btn').addEventListener('click', () => {
+    if (!state.currentGame || !state.pendingGameId) {
+      goHome();
+      return;
+    }
+    renderModeSelection(state.pendingGameId, state.currentGame);
+  });
+  document.getElementById('mode-view-back-btn').addEventListener('click', () => {
+    if (!state.currentGame || !state.pendingGameId) {
+      goHome();
+      return;
+    }
+    renderModeSelection(state.pendingGameId, state.currentGame);
   });
 }
 
@@ -382,16 +623,19 @@ async function init() {
   updateMascotDisplay();
   showScreen('home');
 
-  const gameSummaries = Object.entries(GAME_REGISTRY)
-    .map(([gameId, metadata]) => {
-      const best = getHighScore(gameId);
+  const gameSummaries = await Promise.all(
+    Object.entries(GAME_REGISTRY).map(async ([gameId, metadata]) => {
+      const game = await loadGame(gameId);
+      const defaultMode = game.defaultMode || null;
+      const best = getHighScore(gameId, defaultMode);
       return best ? `${metadata.title} best ${best.score}` : null;
-    })
-    .filter(Boolean);
+    }),
+  );
 
-  if (gameSummaries.length > 0) {
+  const filteredSummaries = gameSummaries.filter(Boolean);
+  if (filteredSummaries.length > 0) {
     const subtitle = document.querySelector('.subtitle');
-    subtitle.textContent = `${gameSummaries.join(' • ')}.`;
+    subtitle.textContent = `${filteredSummaries.join(' • ')}.`;
   }
 
   if ('serviceWorker' in navigator) {
