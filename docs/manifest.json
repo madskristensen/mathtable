@@ -1,7 +1,7 @@
 {
-  "name": "Math Champ",
-  "short_name": "Math Champ",
-  "description": "Master your multiplication tables with this fun math game!",
+  "name": "Kids Learning Hub",
+  "short_name": "Kids Hub",
+  "description": "A playful hub of kids games including multiplication and analog clock practice.",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
