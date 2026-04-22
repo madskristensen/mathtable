@@ -336,7 +336,7 @@ body {
   display: flex;
   gap: 1rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
   padding: 0.5rem 0 0.25rem;
   /* centre the first/last card */
@@ -345,9 +345,8 @@ body {
 
 .games-carousel::-webkit-scrollbar { display: none; }
 
-/* pseudo-elements add leading/trailing space so the first/last card centres */
-.games-carousel::before,
-.games-carousel::after {
+/* leading space so the first card can centre; no trailing space so scroll stops at last card */
+.games-carousel::before {
   content: '';
   flex-shrink: 0;
   width: calc(50% - 5.25rem);
