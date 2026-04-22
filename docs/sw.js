@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mathchamp-v7';
+const CACHE_NAME = 'kids-hub-v8';
 const ASSETS = [
   './',
   './index.html',
@@ -6,12 +6,12 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './favicon.svg',
-  './fox.svg',
   './icon-192.png',
   './icon-512.png',
+  './games/multiplication.js',
+  './games/clock.js',
 ];
 
-// Install: cache all assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
@@ -19,7 +19,6 @@ self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
@@ -29,16 +28,12 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for same-origin assets, fallback to cache for offline
 self.addEventListener('fetch', (e) => {
-  // Only handle same-origin GET requests
-  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) {
-    return;
-  }
+  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
+
   e.respondWith(
     fetch(e.request)
       .then((response) => {
-        // Update the cache with the fresh response
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
         return response;
