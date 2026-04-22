@@ -55,6 +55,13 @@ const GAME_REGISTRY = {
     defaultMode: 'quick',
     loader: () => import('./games/reading.js?v=16'),
   },
+  flashword: {
+    title: 'Flash Word',
+    icon: '⚡',
+    description: 'A word flashes for a moment — pick which one you saw!',
+    defaultMode: 'sight',
+    loader: () => import('./games/flashword.js?v=16'),
+  },
 };
 
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];

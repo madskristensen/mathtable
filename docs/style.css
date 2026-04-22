@@ -1008,6 +1008,45 @@ body {
   line-height: 1;
 }
 
+.flash-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.flash-word {
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  line-height: 1.1;
+  min-height: 4.4rem;
+  text-align: center;
+  font-variant-ligatures: none;
+}
+
+.flash-word--hidden {
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.5em;
+  text-shadow: none;
+  font-weight: 700;
+}
+
+.flash-hint {
+  font-size: 0.95rem;
+  opacity: 0.85;
+  color: var(--white);
+}
+
+.flash-answer {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* ── End Reading Game ─────────────────────────────────────── */
 
 @media (max-height: 42rem) {
@@ -1018,4 +1057,6 @@ body {
   .answer-btn--emoji { min-height: 4.2rem; }
   .reading-emoji { font-size: 2.4rem; }
   .reading-word { font-size: 2.2rem; }
+  .flash-word { font-size: 2.8rem; min-height: 3.2rem; }
+  .flash-answer { font-size: 1.15rem; }
 }
