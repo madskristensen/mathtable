@@ -7,10 +7,31 @@ const HOME_ROUTE = '/';
 const GAME_REGISTRY = {
   multiplication: {
     title: 'Multiplication',
-    icon: '🔢',
+    icon: '✖️',
     description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
     defaultMode: 'quick',
     loader: () => import('./games/multiplication.js?v=15'),
+  },
+  addition: {
+    title: 'Addition',
+    icon: '➕',
+    description: 'Quick Game, Practice, Challenge, and Addition Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/addition.js'),
+  },
+  subtraction: {
+    title: 'Subtraction',
+    icon: '➖',
+    description: 'Quick Game, Practice, Challenge, and Subtraction Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/subtraction.js'),
+  },
+  division: {
+    title: 'Division',
+    icon: '➗',
+    description: 'Quick Game, Practice, Challenge, and Division Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/division.js'),
   },
   clock: {
     title: 'Tell Time (Analog Clock)',
@@ -985,7 +1006,7 @@ function bindEvents() {
     if (!display) return;
     if (e.key >= '0' && e.key <= '9') handleNumpadKey(e.key, display);
     else if (e.key === 'Backspace') handleNumpadKey('⌫', display);
-    else if (e.key === 'Enter') handleNumpadKey('✓', display);
+    else if (e.key === 'Enter') { e.preventDefault(); handleNumpadKey('✓', display); }
   });
 
   document.getElementById('mascot-btn').addEventListener('click', openAnimalPicker);

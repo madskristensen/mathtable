@@ -71,7 +71,7 @@ function renderProgressMap(stats) {
 export const game = {
   id: 'multiplication',
   title: 'Multiplication',
-  icon: '🔢',
+  icon: '✖️',
   description: 'Solve multiplication facts quickly.',
   defaultMode: MODE_IDS.QUICK,
   modes: [
