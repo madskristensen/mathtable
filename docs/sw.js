@@ -1,15 +1,15 @@
-const CACHE_NAME = 'kids-hub-v13';
+const CACHE_NAME = 'kids-hub-v15';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './app.js',
+  './app.js?v=15',
   './manifest.json',
   './favicon.svg',
   './icon-192.png',
   './icon-512.png',
-  './games/multiplication.js',
-  './games/clock.js',
+  './games/multiplication.js?v=15',
+  './games/clock.js?v=15',
 ];
 
 self.addEventListener('install', (e) => {
@@ -30,6 +30,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
+  if (e.request.url.includes('sw.js')) return;
 
   e.respondWith(
     fetch(e.request)

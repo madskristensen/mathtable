@@ -10,14 +10,14 @@ const GAME_REGISTRY = {
     icon: '🔢',
     description: 'Quick Game, Practice, Challenge, and Multiplication Map.',
     defaultMode: 'quick',
-    loader: () => import('./games/multiplication.js'),
+    loader: () => import('./games/multiplication.js?v=15'),
   },
   clock: {
     title: 'Tell Time (Analog Clock)',
     icon: '🕒',
     description: 'Quick Game, Practice, and Challenge.',
     defaultMode: 'quick',
-    loader: () => import('./games/clock.js'),
+    loader: () => import('./games/clock.js?v=15'),
   },
   timemath: {
     title: 'Time Math',
@@ -251,27 +251,74 @@ async function loadGame(gameId) {
 }
 
 async function renderGameCards() {
-  const grid = document.getElementById('games-grid');
-  grid.innerHTML = '';
+  const carousel = document.getElementById('games-grid');
+  const dotsContainer = document.getElementById('carousel-dots');
+  carousel.innerHTML = '';
+  dotsContainer.innerHTML = '';
 
   const gameIds = Object.keys(GAME_REGISTRY);
-  for (const gameId of gameIds) {
+
+  gameIds.forEach((gameId, index) => {
     const game = GAME_REGISTRY[gameId];
     const card = document.createElement('button');
     card.className = 'game-card';
     const best = getHighScore(gameId);
     const highScoreLabel = best ? `High score: ${best.score}` : 'High score: —';
     card.innerHTML = `
-      <span class="game-card-header">
-        <span class="game-card-icon">${game.icon}</span>
-        <span class="game-card-title">${game.title}</span>
-      </span>
+      <span class="game-card-icon">${game.icon}</span>
+      <span class="game-card-title">${game.title}</span>
       <span class="game-card-desc">${game.description}</span>
       <span class="game-card-score">${highScoreLabel}</span>
     `;
     card.addEventListener('click', () => startGame(gameId));
-    grid.appendChild(card);
-  }
+    carousel.appendChild(card);
+
+    // dot
+    const dot = document.createElement('button');
+    dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', `Go to ${game.title}`);
+    dot.addEventListener('click', () => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    });
+    dotsContainer.appendChild(dot);
+  });
+
+  // Update active dot on scroll
+  const dots = dotsContainer.querySelectorAll('.carousel-dot');
+  const cards = carousel.querySelectorAll('.game-card');
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.intersectionRatio >= 0.5) {
+          const idx = Array.from(cards).indexOf(entry.target);
+          dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      });
+    },
+    { root: carousel, threshold: 0.5 }
+  );
+  cards.forEach((c) => observer.observe(c));
+
+  // Mouse drag to scroll
+  let isDown = false;
+  let startX = 0;
+  let scrollLeft = 0;
+
+  carousel.addEventListener('mousedown', (e) => {
+    isDown = true;
+    carousel.style.cursor = 'grabbing';
+    startX = e.pageX - carousel.offsetLeft;
+    scrollLeft = carousel.scrollLeft;
+  });
+  carousel.addEventListener('mouseleave', () => { isDown = false; carousel.style.cursor = ''; });
+  carousel.addEventListener('mouseup', () => { isDown = false; carousel.style.cursor = ''; });
+  carousel.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - carousel.offsetLeft;
+    carousel.scrollLeft = scrollLeft - (x - startX);
+  });
 }
 
 function getGameHighScoreEntries(stats, gameId) {
@@ -384,7 +431,6 @@ function renderQuestion() {
 
 function renderNumpad(container) {
   const display = document.querySelector('#prompt .numpad-inline-display');
-  console.log('[numpad] renderNumpad called, display found:', display, 'prompt innerHTML:', document.getElementById('prompt')?.innerHTML);
   const grid = document.createElement('div');
   grid.className = 'numpad-grid';
 
@@ -404,7 +450,6 @@ function renderNumpad(container) {
 }
 
 function handleNumpadKey(key, display) {
-  console.log('[numpad] key pressed:', JSON.stringify(key), 'display:', display, 'session ended:', state.session?.ended);
   if (state.session && state.session.ended) return;
   if (!display) return;
 
@@ -934,6 +979,15 @@ function handlePopState(event) {
 function bindEvents() {
   window.addEventListener('popstate', handlePopState);
 
+  document.addEventListener('keydown', (e) => {
+    if (!state.currentQuestion?.useNumpad) return;
+    const display = document.querySelector('#prompt .numpad-inline-display');
+    if (!display) return;
+    if (e.key >= '0' && e.key <= '9') handleNumpadKey(e.key, display);
+    else if (e.key === 'Backspace') handleNumpadKey('⌫', display);
+    else if (e.key === 'Enter') handleNumpadKey('✓', display);
+  });
+
   document.getElementById('mascot-btn').addEventListener('click', openAnimalPicker);
   document.getElementById('picker-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeAnimalPicker();
@@ -992,7 +1046,7 @@ async function init() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
     });
   }
 }

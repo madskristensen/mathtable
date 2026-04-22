@@ -14,6 +14,7 @@ docs/
   games/
     multiplication.js  Multiplication game module
     clock.js           Analog Clock game module
+    timemath.js        Time Math game module
   sw.js                Service worker (cache-first, update CACHE_NAME on asset changes)
   manifest.json        PWA manifest
 ```
@@ -38,6 +39,19 @@ GAME_REGISTRY['my-game'] = {
   defaultMode: 'play',          // used for high-score subtitle on home screen
   loader: () => import('./games/my-game.js'),
 };
+```
+
+### Home screen carousel
+
+Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Each card shows:
+- A large emoji `icon` (~4.5 rem) at the top
+- `title` below the icon
+- `description` as body text (keep it short — 1–2 sentences)
+- A high-score pill at the bottom (auto-populated by the framework)
+
+Adding an entry to `GAME_REGISTRY` automatically adds a card and a dot indicator to the carousel — no HTML or CSS changes needed.
+
+```js
 ```
 
 ### Shared state (`state` object)

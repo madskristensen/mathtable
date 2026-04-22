@@ -34,7 +34,10 @@
 
         <button class="mascot-btn" id="mascot-btn" aria-label="Change animal"></button>
 
-        <div class="games-grid" id="games-grid"></div>
+        <div class="carousel-wrapper">
+          <div class="games-carousel" id="games-grid"></div>
+          <div class="carousel-dots" id="carousel-dots"></div>
+        </div>
 
         <div class="stats-bar">
           <div class="stat">
@@ -86,9 +89,9 @@
             <div class="timer" id="timer-display" style="display:none">⏱️ <span id="timer-value">60</span>s</div>
           </div>
         </div>
-        </div>
+      </div>
 
-        <div class="game-body">
+      <div class="game-body">
           <div class="mascot" id="mascot"></div>
           <div class="prompt" id="prompt"></div>
           <div class="feedback" id="feedback"></div>
@@ -143,6 +146,11 @@
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+    }
+  </script>
+  <script type="module" src="app.js?v=15"></script>
 </body>
 </html>
