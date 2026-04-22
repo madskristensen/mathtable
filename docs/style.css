@@ -8,6 +8,7 @@
   --surface-strong: rgba(255, 245, 230, 0.9);
   --surface-soft: rgba(255, 255, 255, 0.15);
   --text: #1c1917;
+  --text-on-light: #1c1917;
   --white: #fff;
   --card-border: rgba(255, 255, 255, 0.35);
   --bg-start: #e8540a;
@@ -369,7 +370,7 @@ body {
   background: rgba(255, 255, 255, 0.92);
   font-size: 1.25rem;
   font-weight: 800;
-  color: #1c1917;
+  color: var(--text-on-light);
 }
 
 .answer-btn.correct {
