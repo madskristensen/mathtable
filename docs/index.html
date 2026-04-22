@@ -6,11 +6,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Math Champ">
-  <meta name="theme-color" content="#6c5ce7">
+  <meta name="theme-color" content="#e8540a">
   <title>Math Champ ✕</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,7 +23,7 @@
     <div id="screen-home" class="screen active">
       <div class="home-content">
         <div class="logo">
-          <span class="logo-icon">✕</span>
+          <span class="logo-icon">🦊</span>
           <h1>Math Champ</h1>
           <p class="subtitle">Master your multiplication tables!</p>
         </div>
@@ -36,7 +39,7 @@
             <span class="btn-desc">Random problems</span>
           </button>
           <button class="btn btn-practice" onclick="showTablePicker()">
-            <span class="btn-icon">📚</span>
+            <span class="btn-icon">✏️</span>
             <span class="btn-label">Practice</span>
             <span class="btn-desc">Pick a table to master</span>
           </button>
@@ -134,7 +137,7 @@
       </div>
 
       <div class="game-body">
-        <div class="mascot" id="mascot">🤔</div>
+        <div class="mascot" id="mascot">🦊</div>
         <div class="problem-container">
           <div class="problem" id="problem">
             <span class="problem-num" id="num-a">7</span>

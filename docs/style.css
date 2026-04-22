@@ -1,24 +1,115 @@
 /* ============================================
-   MATH CHAMP — Styles
+   MATH CHAMP — Styles  🦊
    ============================================ */
 
+/* ---- Light theme (fox-orange palette) ---- */
 :root {
-  --purple: #6c5ce7;
-  --purple-dark: #5a4bd1;
-  --pink: #e84393;
-  --orange: #f39c12;
-  --green: #00b894;
-  --red: #e74c3c;
-  --blue: #0984e3;
-  --bg-start: #6c5ce7;
-  --bg-end: #a29bfe;
-  --text: #2d3436;
-  --text-light: #636e72;
-  --white: #ffffff;
-  --shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.2);
-  --radius: 1rem;
-  --radius-sm: 0.75rem;
+  /* Brand */
+  --primary:       #e8540a;   /* fox orange */
+  --primary-dark:  #c44208;
+  --primary-light: #ff7b35;
+  --accent:        #7c3aed;   /* purple pop */
+  --accent-soft:   #a78bfa;
+
+  /* Semantic colours */
+  --purple:       #7c3aed;
+  --purple-dark:  #5b21b6;
+  --pink:         #ec4899;
+  --orange:       #f97316;
+  --green:        #10b981;
+  --red:          #ef4444;
+  --blue:         #3b82f6;
+
+  /* Background gradient */
+  --bg-start: #e8540a;
+  --bg-mid:   #c4390f;
+  --bg-end:   #7c3aed;
+
+  /* Surface / text */
+  --surface:      rgba(255, 255, 255, 0.92);
+  --text:         #1c1917;
+  --text-light:   #57534e;
+  --white:        #ffffff;
+
+  /* Menu button text colours */
+  --btn-play-text:      #c44208;
+  --btn-practice-text:  #1d4ed8;
+  --btn-challenge-text: #b45309;
+  --btn-progress-text:  #065f46;
+  --btn-scores-text:    #9d174d;
+  --btn-review-text:    #b91c1c;
+
+  /* Menu button background colours (warm tints) */
+  --btn-play-bg:      #fff0e6;
+  --btn-practice-bg:  #eff6ff;
+  --btn-challenge-bg: #fffbeb;
+  --btn-progress-bg:  #ecfdf5;
+  --btn-scores-bg:    #fdf2f8;
+  --btn-review-bg:    #fef2f2;
+
+  /* Shadows / shape */
+  --shadow:    0 4px 15px rgba(0, 0, 0, 0.18);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.25);
+  --radius:    1.1rem;
+  --radius-sm: 0.85rem;
+}
+
+/* ---- Dark theme (prefers-color-scheme) ---- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Background gradient — deeper, midnight-forest feel */
+    --bg-start: #1a0a00;
+    --bg-mid:   #3b0d00;
+    --bg-end:   #1e0940;
+
+    /* Surface / text */
+    --surface:    rgba(255, 255, 255, 0.1);
+    --text:       #fef3c7;
+    --text-light: #d6d3d1;
+    --white:      #ffffff;
+
+    /* Buttons stay readable on dark cards */
+    --btn-play-text:      #fb923c;
+    --btn-practice-text:  #60a5fa;
+    --btn-challenge-text: #fbbf24;
+    --btn-progress-text:  #34d399;
+    --btn-scores-text:    #f472b6;
+    --btn-review-text:    #f87171;
+
+    /* Dark button backgrounds — semi-transparent tints */
+    --btn-play-bg:      rgba(232, 84, 10, 0.18);
+    --btn-practice-bg:  rgba(59, 130, 246, 0.18);
+    --btn-challenge-bg: rgba(245, 158, 11, 0.18);
+    --btn-progress-bg:  rgba(16, 185, 129, 0.18);
+    --btn-scores-bg:    rgba(236, 72, 153, 0.18);
+    --btn-review-bg:    rgba(239, 68,  68, 0.18);
+
+    --shadow:    0 4px 20px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Dark-mode menu buttons — glass border */
+  .btn {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .num-btn {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: var(--white) !important;
+  }
+
+  .num-btn:active {
+    background: rgba(255, 255, 255, 0.22) !important;
+  }
+
+  .num-btn-go {
+    background: var(--green) !important;
+    color: var(--white) !important;
+  }
+
+  .table-btn-4 { color: #fef3c7 !important; }
 }
 
 * {
@@ -37,8 +128,8 @@ html, body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(145deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
   color: var(--text);
   min-height: 100dvh;
 }
@@ -47,6 +138,10 @@ body {
   height: 100dvh;
   position: relative;
   overflow: hidden;
+}
+
+.screen {
+  z-index: 1;
 }
 
 /* ============================================
@@ -88,26 +183,48 @@ body {
 
 .logo {
   text-align: center;
+  position: relative;
+}
+
+.logo::before {
+  content: '⭐ 🦴 ⭐';
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  opacity: 0.5;
+  letter-spacing: 0.6rem;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .logo-icon {
-  font-size: 4rem;
+  font-size: 4.5rem;
   display: block;
-  animation: pulse 2s ease-in-out infinite;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  animation: foxWiggle 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+}
+
+@keyframes foxWiggle {
+  0%, 80%, 100% { transform: rotate(0deg) scale(1); }
+  85%           { transform: rotate(-12deg) scale(1.1); }
+  92%           { transform: rotate(10deg) scale(1.1); }
+  96%           { transform: rotate(-6deg) scale(1.05); }
 }
 
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50%      { transform: scale(1.12); }
 }
 
 .logo h1 {
-  font-size: 2.625rem;
-  font-weight: 800;
+  font-size: 2.75rem;
+  font-weight: 900;
   color: var(--white);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
   margin-top: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
@@ -136,12 +253,20 @@ body {
   border: none;
   border-radius: var(--radius);
   font-size: 1rem;
+  font-family: inherit;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   box-shadow: var(--shadow);
   text-align: left;
   position: relative;
   overflow: hidden;
+  background: var(--surface);
+}
+
+.btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  filter: brightness(1.04);
 }
 
 .btn:active {
@@ -166,18 +291,18 @@ body {
 }
 
 .btn-play {
-  background: var(--white);
-  color: var(--purple);
+  background: var(--btn-play-bg);
+  color: var(--btn-play-text);
 }
 
 .btn-practice {
-  background: var(--white);
-  color: var(--blue);
+  background: var(--btn-practice-bg);
+  color: var(--btn-practice-text);
 }
 
 .btn-challenge {
-  background: var(--white);
-  color: var(--orange);
+  background: var(--btn-challenge-bg);
+  color: var(--btn-challenge-text);
 }
 
 /* ============================================
@@ -236,16 +361,18 @@ body {
   border: none;
   color: var(--white);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: inherit;
   padding: 0.5rem 1rem;
   border-radius: 1.25rem;
   cursor: pointer;
   margin-bottom: 1rem;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.15s;
 }
 
-.back-btn:active {
-  background: rgba(255, 255, 255, 0.35);
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+  transform: translateX(-2px);
 }
 
 .table-grid {
@@ -474,12 +601,18 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   font-size: 1.5rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.9);
+  font-weight: 800;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.88);
   color: var(--text);
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.1s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease, background 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.num-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .num-btn:active {
@@ -496,11 +629,13 @@ body {
   background: var(--green);
   color: var(--white);
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
 }
 
 .num-btn-go:active {
-  background: #00a884;
+  background: #059669;
 }
 
 /* ============================================
@@ -650,18 +785,18 @@ body {
    ============================================ */
 
 .btn-progress {
-  background: var(--white);
-  color: #00b894;
+  background: var(--btn-progress-bg);
+  color: var(--btn-progress-text);
 }
 
 .btn-scores {
-  background: var(--white);
-  color: #e84393;
+  background: var(--btn-scores-bg);
+  color: var(--btn-scores-text);
 }
 
 .btn-review {
-  background: var(--white);
-  color: #e74c3c;
+  background: var(--btn-review-bg);
+  color: var(--btn-review-text);
   width: 100%;
 }
 
@@ -763,8 +898,8 @@ body {
 
 .legend-new      { background: rgba(255,255,255,0.2); }
 .legend-learning { background: #fdcb6e; }
-.legend-good     { background: #00b894; }
-.legend-mastered { background: #6c5ce7; }
+.legend-good     { background: #10b981; }
+.legend-mastered { background: var(--primary); }
 
 .progress-grid {
   display: grid;
@@ -802,8 +937,8 @@ body {
 
 .grid-cell.cell-new      { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); }
 .grid-cell.cell-learning { background: #fdcb6e; color: #5a4e3a; }
-.grid-cell.cell-good     { background: #00b894; color: white; }
-.grid-cell.cell-mastered { background: #6c5ce7; color: white; }
+.grid-cell.cell-good     { background: #10b981; color: white; }
+.grid-cell.cell-mastered { background: var(--primary); color: white; }
 
 .progress-summary {
   margin-top: 1rem;
@@ -933,6 +1068,23 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 100;
+}
+
+/* ============================================
+   FOX PAW BURST  (CSS particle on correct)
+   ============================================ */
+
+@keyframes pawFloat {
+  0%   { transform: translate(0, 0) scale(1);   opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+}
+
+.paw-particle {
+  position: fixed;
+  font-size: 1.5rem;
+  pointer-events: none;
+  z-index: 99;
+  animation: pawFloat 0.8s ease-out forwards;
 }
 
 /* ============================================

@@ -96,12 +96,12 @@ function hapticStreak()  { haptic([20, 20, 20, 20, 40]); }
 // MASCOT
 // =============================================
 const mascotStates = {
-  idle:     ['🤔', '🧐', '😊'],
-  correct:  ['😄', '🥳', '😎', '🤩', '💃'],
-  wrong:    ['😕', '🤨', '😬'],
-  streak5:  ['🤩', '🥳', '🏆'],
-  streak10: ['🏆', '👑', '🦸'],
-  thinking: ['🤔', '🧐', '💭'],
+  idle:     ['🦊', '🦊', '🐾'],
+  correct:  ['🦊', '🎉', '⭐', '🦊', '✨'],
+  wrong:    ['🦊', '😬', '🙈'],
+  streak5:  ['🦊', '🔥', '🏆'],
+  streak10: ['🏆', '👑', '🦊'],
+  thinking: ['🦊', '🐾', '💭'],
 };
 
 function setMascot(state, animate = 'bounce') {
@@ -401,16 +401,62 @@ function generateAdaptive(minTable, maxTable) {
 // =============================================
 // SCREEN NAVIGATION
 // =============================================
+
+// Screens that should push a history entry when navigated to
+const PUSHABLE_SCREENS = new Set(['picker', 'progress', 'scores', 'game', 'results']);
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(`screen-${id}`).classList.add('active');
+
+  if (PUSHABLE_SCREENS.has(id)) {
+    history.pushState({ screen: id }, '', '');
+  } else {
+    // home — replace so the stack doesn't grow on every goHome()
+    history.replaceState({ screen: 'home' }, '', '');
+  }
 }
 
 function goHome() {
   stopTimer();
-  showScreen('home');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  history.replaceState({ screen: 'home' }, '', '');
   updateHomeStats();
 }
+
+// Handle hardware / browser back button
+window.addEventListener('popstate', (e) => {
+  const screen = e.state?.screen ?? 'home';
+
+  if (screen === 'game') {
+    // Navigating back TO game isn't meaningful — go home instead
+    goHome();
+    return;
+  }
+
+  if (screen === 'results') {
+    // Navigating back to results also makes little sense — go home
+    goHome();
+    return;
+  }
+
+  if (screen === 'home') {
+    // If a game is in progress stop it first
+    if (document.getElementById('screen-game').classList.contains('active')) {
+      stopTimer();
+    }
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-home').classList.add('active');
+    history.replaceState({ screen: 'home' }, '', '');
+    updateHomeStats();
+    return;
+  }
+
+  // picker / progress / scores — safe to just show the screen
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${screen}`)?.classList.add('active');
+});
 
 function updateHomeStats() {
   const stats = loadStats();
@@ -677,6 +723,31 @@ function handleCorrect() {
   const fire = document.getElementById('streak-fire');
   fire.classList.add('big');
   setTimeout(() => fire.classList.remove('big'), 200);
+
+  // Fox paw burst 🐾
+  spawnPawBurst();
+}
+
+function spawnPawBurst() {
+  const emojis = ['🐾', '⭐', '✨', '🦊', '💥'];
+  const originEl = document.getElementById('problem');
+  if (!originEl) return;
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 6; i++) {
+    const el = document.createElement('span');
+    el.className = 'paw-particle';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    const angle = (i / 6) * 2 * Math.PI + Math.random() * 0.5;
+    const dist = 60 + Math.random() * 50;
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
 }
 
 function handleWrong(correct) {
@@ -843,6 +914,12 @@ function animateConfetti() {
 // KEYBOARD SUPPORT
 // =============================================
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('screen-game').classList.contains('active')) {
+      endGame();
+    }
+    return;
+  }
   if (!document.getElementById('screen-game').classList.contains('active')) return;
   if (e.key >= '0' && e.key <= '9') pressNum(parseInt(e.key));
   else if (e.key === 'Backspace') clearAnswer();
@@ -858,6 +935,8 @@ document.addEventListener('touchstart', () => {
 // INIT
 // =============================================
 updateHomeStats();
+// Seed initial history state so popstate always has a state object
+history.replaceState({ screen: 'home' }, '', '');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
