@@ -45,12 +45,18 @@ docs/
 
 ## Development
 
-Serve the `docs/` directory with any static file server:
+Double-click **`run.cmd`** (Windows) to launch a local dev server with live reload:
 
 ```sh
-cd docs
-npx serve .
+run.cmd
 ```
+
+This installs the [LiveReloadServer](https://github.com/RickStrahl/LiveReloadServer) .NET global tool (if needed), serves `docs/` at **http://localhost:8080**, and opens your browser automatically. Any file change will instantly refresh the page.
+
+> **Tip — Service Worker caching during development:**
+> The service worker can serve stale cached files. To always see your latest changes,
+> open **Edge / Chrome DevTools → Application → Service Workers** and check
+> **"Update on reload"**. This forces the browser to fetch a fresh service worker on every page load.
 
 ## License
 
