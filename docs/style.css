@@ -369,7 +369,7 @@ body {
   background: rgba(255, 255, 255, 0.92);
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--text);
+  color: #1c1917;
 }
 
 .answer-btn.correct {
