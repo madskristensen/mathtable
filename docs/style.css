@@ -195,6 +195,7 @@ body {
 .game-card-title { font-size: 1.1rem; font-weight: 800; }
 .game-card-desc { font-size: 0.86rem; opacity: 0.75; }
 .game-card-score { font-size: 0.78rem; font-weight: 800; opacity: 0.8; }
+.game-card-score:empty { display: none; }
 
 .mode-content {
   height: 100%;
