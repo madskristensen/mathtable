@@ -4,16 +4,29 @@
   --accent: #7c3aed;
   --green: #10b981;
   --red: #ef4444;
-  --surface: rgba(255, 255, 255, 0.92);
+  --surface: rgba(255, 250, 240, 0.82);
+  --surface-strong: rgba(255, 245, 230, 0.9);
   --surface-soft: rgba(255, 255, 255, 0.15);
   --text: #1c1917;
   --white: #fff;
+  --card-border: rgba(255, 255, 255, 0.35);
   --bg-start: #e8540a;
   --bg-mid: #c4390f;
   --bg-end: #7c3aed;
   --radius: 1.1rem;
   --radius-sm: 0.85rem;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+body[data-theme='dark'] {
+  --surface: rgba(21, 27, 44, 0.78);
+  --surface-strong: rgba(30, 39, 61, 0.9);
+  --surface-soft: rgba(15, 23, 42, 0.38);
+  --text: #f8fafc;
+  --card-border: rgba(148, 163, 184, 0.28);
+  --bg-start: #1f2937;
+  --bg-mid: #111827;
+  --bg-end: #312e81;
 }
 
 * {
@@ -76,6 +89,21 @@ body {
 .logo {
   text-align: center;
   margin-top: 0.5rem;
+  position: relative;
+}
+
+.theme-toggle {
+  position: absolute;
+  right: -0.3rem;
+  top: -0.2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--surface-soft);
+  color: var(--white);
+  font-size: 1.1rem;
+  cursor: pointer;
 }
 
 .logo h1 {
@@ -151,20 +179,23 @@ body {
 }
 
 .game-card {
-  border: none;
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: linear-gradient(145deg, var(--surface-strong) 0%, var(--surface) 100%);
   color: var(--text);
   text-align: left;
   padding: 1rem 1.1rem;
   box-shadow: var(--shadow);
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  cursor: pointer;
 }
 
 .game-card-icon { font-size: 1.6rem; }
 .game-card-title { font-size: 1.1rem; font-weight: 800; }
 .game-card-desc { font-size: 0.86rem; opacity: 0.75; }
+.game-card-score { font-size: 0.78rem; font-weight: 800; opacity: 0.8; }
+.game-card-score:empty { display: none; }
 
 .mode-content {
   height: 100%;
@@ -193,20 +224,23 @@ body {
 }
 
 .mode-card {
-  border: none;
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: linear-gradient(145deg, var(--surface-strong) 0%, var(--surface) 100%);
   color: var(--text);
   text-align: left;
   padding: 1rem 1.1rem;
   box-shadow: var(--shadow);
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  cursor: pointer;
 }
 
 .mode-card-icon { font-size: 1.5rem; }
 .mode-card-title { font-size: 1.06rem; font-weight: 800; }
 .mode-card-desc { font-size: 0.86rem; opacity: 0.75; }
+.mode-card-score { font-size: 0.78rem; font-weight: 800; opacity: 0.8; }
+.mode-card-score:empty { display: none; }
 
 .table-grid {
   width: 100%;
