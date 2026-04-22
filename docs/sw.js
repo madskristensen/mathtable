@@ -1,10 +1,12 @@
-const CACHE_NAME = 'mathchamp-v3';
+const CACHE_NAME = 'mathchamp-v6';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
+  './favicon.svg',
+  './fox.svg',
   './icon-192.png',
   './icon-512.png',
 ];

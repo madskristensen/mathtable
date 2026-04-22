@@ -200,8 +200,10 @@ body {
 }
 
 .logo-icon {
-  font-size: 4.5rem;
+  width: 5rem;
+  height: 5rem;
   display: block;
+  margin: 0 auto;
   animation: foxWiggle 3s ease-in-out infinite;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
 }
@@ -484,6 +486,30 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
+#score-count {
+  display: inline-block;
+}
+
+@keyframes scorePop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.6); color: #fde68a; }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.score-pop {
+  animation: scorePop 0.35s ease;
+}
+
+@keyframes answerCorrectFlash {
+  0%   { background: rgba(16, 185, 129, 0.85); color: #fff; transform: scale(1.08); }
+  100% { background: rgba(255, 255, 255, 0.2); color: inherit; transform: scale(1); }
+}
+
+.answer-correct-flash {
+  animation: answerCorrectFlash 0.4s ease forwards;
+}
+
 .timer {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.5rem 1rem;
@@ -733,19 +759,29 @@ body {
 
 .results-buttons {
   display: flex;
-  gap: 0.75rem;
+  flex-direction: row;
+  gap: 0.5rem;
   width: 100%;
   max-width: 21.25rem;
 }
 
 .results-buttons .btn {
   flex: 1;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   text-align: center;
+  padding: 0.625rem 0.5rem;
+  gap: 0.25rem;
+}
+
+.results-buttons .btn-icon {
+  font-size: 1.25rem;
 }
 
 .results-buttons .btn-label {
-  font-size: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
 }
 
 /* ============================================
@@ -807,8 +843,16 @@ body {
 .mascot {
   font-size: 3rem;
   text-align: center;
+  line-height: 1;
   transition: transform 0.3s ease;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+}
+
+.mascot-svg {
+  width: 3rem;
+  height: 3rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .mascot.bounce {
@@ -831,11 +875,13 @@ body {
 }
 
 @keyframes mascotShake {
-  0%, 100% { transform: rotate(0deg); }
-  20% { transform: rotate(-12deg); }
-  40% { transform: rotate(12deg); }
-  60% { transform: rotate(-8deg); }
-  80% { transform: rotate(8deg); }
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-0.5rem); }
+  30%       { transform: translateX(0.5rem); }
+  45%       { transform: translateX(-0.4rem); }
+  60%       { transform: translateX(0.4rem); }
+  75%       { transform: translateX(-0.2rem); }
+  90%       { transform: translateX(0.2rem); }
 }
 
 @keyframes mascotDance {
@@ -1102,13 +1148,14 @@ body {
   .home-content {
     gap: 2.5rem;
   }
-  .mascot {
-    font-size: 3.5rem;
+  .mascot-svg {
+    width: 3.5rem;
+    height: 3.5rem;
   }
 }
 
 @media (max-height: 37.5rem) {
-  .logo-icon { font-size: 2.5rem; }
+  .logo-icon { width: 2.5rem; height: 2.5rem; }
   .logo h1 { font-size: 2rem; }
   .home-content { gap: 0.75rem; }
   .daily-streak { padding: 0.25rem 0.875rem; }

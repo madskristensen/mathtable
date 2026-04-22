@@ -95,25 +95,31 @@ function hapticStreak()  { haptic([20, 20, 20, 20, 40]); }
 // =============================================
 // MASCOT
 // =============================================
+const FOX_SVG = '<img src="fox.svg" class="mascot-svg" alt="">';
+const FOX_CHAR = '🦊';
+
 const mascotStates = {
-  idle:     ['🦊', '🦊', '🐾'],
-  correct:  ['🦊', '🎉', '⭐', '🦊', '✨'],
-  wrong:    ['🦊', '😬', '🙈'],
-  streak5:  ['🦊', '🔥', '🏆'],
-  streak10: ['🏆', '👑', '🦊'],
-  thinking: ['🦊', '🐾', '💭'],
+  idle:     [FOX_CHAR, FOX_CHAR, FOX_CHAR],
+  correct:  [FOX_CHAR, '🎉', '⭐', FOX_CHAR, '✨'],
+  wrong:    [FOX_CHAR],
+  streak5:  [FOX_CHAR, '🔥', '🏆'],
+  streak10: ['🏆', '👑', FOX_CHAR],
+  thinking: [FOX_CHAR],
 };
 
 function setMascot(state, animate = 'bounce') {
   const el = document.getElementById('mascot');
   const faces = mascotStates[state] || mascotStates.idle;
-  el.textContent = faces[Math.floor(Math.random() * faces.length)];
+  const chosen = faces[Math.floor(Math.random() * faces.length)];
+  el.innerHTML = chosen === FOX_CHAR ? FOX_SVG : chosen;
   el.className = 'mascot';
   if (animate) {
     void el.offsetWidth; // force reflow
     el.classList.add(animate);
   }
 }
+
+
 
 // =============================================
 // PERSISTENT STATS (localStorage)
@@ -712,7 +718,10 @@ function handleCorrect() {
     setMascot('correct', 'bounce');
   }
 
-  // Confetti for streaks of 5+
+  // Small confetti on every correct answer
+  launchConfettiSmall();
+
+  // Big confetti + streak sounds at milestone streaks
   if (streak > 0 && streak % 5 === 0) {
     launchConfetti();
     soundStreak();
@@ -724,8 +733,16 @@ function handleCorrect() {
   fire.classList.add('big');
   setTimeout(() => fire.classList.remove('big'), 200);
 
-  // Fox paw burst 🐾
-  spawnPawBurst();
+  // Score pop
+  const scoreEl = document.getElementById('score-count');
+  scoreEl.classList.remove('score-pop');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('score-pop');
+
+  // Answer flash green then clear
+  const answerEl = document.getElementById('answer-display');
+  answerEl.classList.add('answer-correct-flash');
+  setTimeout(() => answerEl.classList.remove('answer-correct-flash'), 400);
 }
 
 function spawnPawBurst() {
@@ -859,6 +876,25 @@ function resizeConfetti() {
 }
 window.addEventListener('resize', resizeConfetti);
 resizeConfetti();
+
+function launchConfettiSmall() {
+  const colors = ['#6c5ce7', '#e84393', '#00b894', '#f39c12', '#0984e3', '#fd79a8', '#fdcb6e', '#ff6b6b'];
+  for (let i = 0; i < 15; i++) {
+    confettiParticles.push({
+      x: Math.random() * confettiCanvas.width,
+      y: -10 - Math.random() * 20,
+      w: 5 + Math.random() * 4,
+      h: 3 + Math.random() * 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 5,
+      vy: 2 + Math.random() * 3,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 10,
+      life: 1,
+    });
+  }
+  if (!confettiAnimId) animateConfetti();
+}
 
 function launchConfetti() {
   const colors = ['#6c5ce7', '#e84393', '#00b894', '#f39c12', '#0984e3', '#fd79a8', '#fdcb6e', '#ff6b6b'];
