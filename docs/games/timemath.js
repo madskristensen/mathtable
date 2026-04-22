@@ -1,39 +1,13 @@
-const ADD_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
-const SUBTRACT_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
-const ELAPSED_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
+import { MODE_IDS, randomInt, randomItem, shuffle, pad2 } from './_shared.js';
 
-const MODE_IDS = {
-  QUICK: 'quick',
-  PRACTICE: 'practice',
-  CHALLENGE: 'challenge',
-};
+const SHIFT_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
+const ELAPSED_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90, 120];
 
 const OPERATION_OPTIONS = [
   { value: 'add', label: 'Adding time' },
   { value: 'subtract', label: 'Subtracting time' },
   { value: 'elapsed', label: 'Elapsed time' },
 ];
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function randomItem(arr) {
-  return arr[randomInt(0, arr.length - 1)];
-}
-
-function shuffle(arr) {
-  const next = [...arr];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
 
 /** Convert total minutes-since-midnight (0–1439) to "H:MM AM/PM" */
 function minutesToTimeString(totalMinutes) {
@@ -100,36 +74,26 @@ function buildElapsedAnswers(correctMinutes) {
   }));
 }
 
-function createAddQuestion() {
-  const startMin = randomStartMinutes();
-  const duration = randomItem(ADD_DURATIONS);
-  const resultMin = startMin + duration;
-  const startStr = minutesToTimeString(startMin);
-  const resultStr = minutesToTimeString(resultMin);
-  const durationLabel = duration === 60 ? '1 hour' : duration === 90 ? '1 hour 30 min' : `${duration} min`;
-
-  return {
-    prompt: `
-      <div class="question-title">What time is it after?</div>
-      <div class="equation">${startStr} + ${durationLabel} = <span class="equation-blank">?</span></div>
-    `,
-    answers: buildTimeAnswers(resultMin, resultStr),
-    correctValue: resultStr,
-  };
+function formatDuration(duration) {
+  if (duration === 60) return '1 hour';
+  if (duration === 90) return '1 hour 30 min';
+  return `${duration} min`;
 }
 
-function createSubtractQuestion() {
+function createShiftQuestion(direction) {
+  const isAdd = direction === 'add';
   const startMin = randomStartMinutes();
-  const duration = randomItem(SUBTRACT_DURATIONS);
-  const resultMin = startMin - duration;
+  const duration = randomItem(SHIFT_DURATIONS);
+  const resultMin = isAdd ? startMin + duration : startMin - duration;
   const startStr = minutesToTimeString(startMin);
   const resultStr = minutesToTimeString(resultMin);
-  const durationLabel = duration === 60 ? '1 hour' : duration === 90 ? '1 hour 30 min' : `${duration} min`;
+  const operator = isAdd ? '+' : '\u2212';
+  const title = isAdd ? 'What time is it after?' : 'What time was it before?';
 
   return {
     prompt: `
-      <div class="question-title">What time was it before?</div>
-      <div class="equation">${startStr} − ${durationLabel} = <span class="equation-blank">?</span></div>
+      <div class="question-title">${title}</div>
+      <div class="equation">${startStr} ${operator} ${formatDuration(duration)} = <span class="equation-blank">?</span></div>
     `,
     answers: buildTimeAnswers(resultMin, resultStr),
     correctValue: resultStr,
@@ -154,9 +118,9 @@ function createElapsedQuestion() {
 }
 
 function createQuestionForOperation(operation) {
-  if (operation === 'subtract') return createSubtractQuestion();
+  if (operation === 'subtract') return createShiftQuestion('subtract');
   if (operation === 'elapsed') return createElapsedQuestion();
-  return createAddQuestion();
+  return createShiftQuestion('add');
 }
 
 function pickRandomOperation() {

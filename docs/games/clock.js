@@ -1,26 +1,6 @@
+import { MODE_IDS, randomInt, shuffle, pad2 } from './_shared.js';
+
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-const MODE_IDS = {
-  QUICK: 'quick',
-  PRACTICE: 'practice',
-  CHALLENGE: 'challenge',
-};
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function shuffle(arr) {
-  const next = [...arr];
-  for (let i = next.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
 
 function formatTime(hour12, minute) {
   return `${hour12}:${pad2(minute)}`;

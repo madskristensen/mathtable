@@ -1,16 +1,21 @@
-const CACHE_NAME = 'kids-hub-v16';
+const CACHE_NAME = 'kids-hub-v18';
 const ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './app.js?v=15',
+  './style.css?v=2',
+  './app.js?v=16',
   './manifest.json',
   './favicon.svg',
   './icon-192.png',
   './icon-512.png',
-  './games/multiplication.js?v=15',
-  './games/clock.js?v=15',
-  './games/reading.js',
+  './games/_shared.js',
+  './games/addition.js?v=16',
+  './games/subtraction.js?v=16',
+  './games/multiplication.js?v=16',
+  './games/division.js?v=16',
+  './games/clock.js?v=16',
+  './games/timemath.js?v=16',
+  './games/reading.js?v=16',
 ];
 
 self.addEventListener('install', (e) => {

@@ -1,5 +1,7 @@
 // Word-bank entries: { word, emoji, category }
 // category: 'animals' | 'food' | 'things'
+import { shuffle } from './_shared.js';
+
 const WORDS = [
   // Animals
   { word: 'CAT',      emoji: '🐱', category: 'animals' },
@@ -54,15 +56,6 @@ const WORDS = [
 ];
 
 const ALL_EMOJIS = WORDS.map((w) => w.emoji);
-
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function wordsForMode(modeId) {
   if (modeId === 'animals') return WORDS.filter((w) => w.category === 'animals');

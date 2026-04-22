@@ -520,14 +520,28 @@ body {
   gap: 0.55rem;
 }
 
+.table-grid--text {
+  max-width: 32rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .table-btn {
   border: none;
   border-radius: var(--radius-sm);
   min-height: 2.8rem;
+  padding: 0.55rem 0.8rem;
   font-size: 1.05rem;
   font-weight: 800;
   background: rgba(255, 255, 255, 0.92);
   color: var(--text-on-light);
+}
+
+.table-grid--text .table-btn {
+  flex: 0 1 auto;
+  padding: 0.7rem 1.2rem;
+  white-space: nowrap;
 }
 
 .stats-bar {
