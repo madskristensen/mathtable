@@ -125,15 +125,15 @@ body {
 .animal-options {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .animal-btn {
   border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.3);
-  height: 2.1rem;
-  font-size: 1.2rem;
+  height: 2.6rem;
+  font-size: 1.6rem;
 }
 
 .animal-btn.active {
@@ -222,7 +222,8 @@ body {
 }
 
 .mascot {
-  font-size: 2rem;
+  font-size: 2.7rem;
+  line-height: 1;
 }
 
 .game-body {

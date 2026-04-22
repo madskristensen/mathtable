@@ -15,7 +15,8 @@ const GAME_REGISTRY = {
 };
 
 const GAME_COUNT = 10;
-const ANIMALS = ['🦊', '🐼', '🐯', '🐶', '🐨', '🦁', '🐸', '🐧'];
+const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];
+const DEFAULT_MASCOT = ANIMALS[0];
 
 const state = {
   loadedGames: {},
@@ -30,7 +31,7 @@ function defaultStats() {
     totalCorrect: 0,
     dailyStreak: 0,
     lastPlayDate: null,
-    mascot: '🦊',
+    mascot: DEFAULT_MASCOT,
     highScores: {},
   };
 }
@@ -40,9 +41,11 @@ function loadStats() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultStats();
     const parsed = JSON.parse(raw);
+    const mascot = ANIMALS.includes(parsed.mascot) ? parsed.mascot : DEFAULT_MASCOT;
     return {
       ...defaultStats(),
       ...parsed,
+      mascot,
       highScores: parsed.highScores || {},
     };
   } catch {
@@ -82,7 +85,8 @@ function showScreen(id) {
 }
 
 function getMascot() {
-  return loadStats().mascot || '🦊';
+  const mascot = loadStats().mascot;
+  return ANIMALS.includes(mascot) ? mascot : DEFAULT_MASCOT;
 }
 
 function updateMascotDisplay() {
