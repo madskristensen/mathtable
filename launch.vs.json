@@ -1,0 +1,12 @@
+{
+    "taskLabel": "Open browser to localhost:8080",
+    "appliesTo": "docs/index.html",
+    "type": "launch",
+    "command": "cmd.exe",
+    "args": [
+        "/c",
+        "start",
+        "http://localhost:8080"
+    ],
+    "workingDirectory": "${workspaceRoot}"
+}

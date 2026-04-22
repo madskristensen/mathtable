@@ -273,6 +273,8 @@ function updateMascotDisplay() {
   const mascot = getMascot();
   const inGameEl = $('mascot');
   if (inGameEl) inGameEl.textContent = mascot;
+  const modeMenuEl = $('mode-menu-mascot');
+  if (modeMenuEl) modeMenuEl.textContent = mascot;
   const homeBtn = $('mascot-btn');
   if (homeBtn) homeBtn.textContent = mascot;
   applyAnimalTheme(mascot);
@@ -699,7 +701,7 @@ function renderQuestion() {
   setFeedback('');
 }
 
-const NUMPAD_KEYS = ['7','8','9','4','5','6','1','2','3','⌫','0','✓'];
+const NUMPAD_KEYS = ['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
 function renderNumpad(container) {
   const display = document.querySelector('#prompt .numpad-inline-display');
   const grid = document.createElement('div');
