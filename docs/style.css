@@ -45,7 +45,15 @@ html, body {
   overflow-x: hidden;
 }
 
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+  }
+}
+
 body {
+  min-height: 100vh;
+  min-height: 100svh;
   min-height: 100dvh;
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
@@ -54,7 +62,11 @@ body {
 
 #app {
   width: 100%;
+  height: 100vh;
+  height: 100svh;
   height: 100dvh;
+  min-height: 100vh;
+  min-height: 100svh;
   min-height: 100dvh;
   position: relative;
   overflow: hidden;
