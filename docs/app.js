@@ -1032,7 +1032,7 @@ function bindEvents() {
     if (e.target === e.currentTarget) closeAnimalPicker();
   });
 
-  $('game-back-btn').addEventListener('click', () => goHome());
+  $('game-back-btn').addEventListener('click', () => goBackToModeMenu());
   $('btn-go-home').addEventListener('click', () => goHome());
   $('btn-play-again').addEventListener('click', () => {
     if (!state.currentGame || !state.session) { goHome(); return; }
@@ -1042,6 +1042,31 @@ function bindEvents() {
   $('mode-menu-back-btn').addEventListener('click', () => goHome());
   $('mode-option-back-btn').addEventListener('click', goBackToModeMenu);
   $('mode-view-back-btn').addEventListener('click', goBackToModeMenu);
+
+  // Esc key acts as the back button on every screen except home, walking
+  // up one level at a time until reaching the home screen.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+
+    // Close the animal picker first if it's open.
+    const picker = $('picker-overlay');
+    if (picker && picker.classList.contains('open')) {
+      e.preventDefault();
+      closeAnimalPicker();
+      return;
+    }
+
+    const active = document.querySelector('.screen.active');
+    if (!active || active.id === 'screen-home') return;
+
+    const backBtn =
+      active.querySelector('.back-btn') ||
+      active.querySelector('#btn-go-home');
+    if (backBtn) {
+      e.preventDefault();
+      backBtn.click();
+    }
+  });
 }
 
 async function init() {
