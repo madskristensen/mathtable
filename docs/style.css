@@ -172,14 +172,72 @@ body {
   font-size: 5rem;
   line-height: 1;
   cursor: pointer;
-  transition: transform 0.15s ease;
   padding: 0;
   margin: 0.25rem 0;
   display: block;
+  animation: mascot-home-idle 6s ease-in-out infinite;
 }
 
-.mascot-btn:hover { transform: scale(1.1); }
-.mascot-btn:active { transform: scale(0.96); }
+.mascot-btn:hover {
+  animation: none;
+  transform: scale(1.15) rotate(-5deg);
+  transition: transform 0.2s var(--ease-bounce);
+}
+.mascot-btn:active {
+  animation: none;
+  transform: scale(0.92);
+  transition: transform 0.1s ease;
+}
+
+/* Continuous idle: gentle sway with two playful peek-tilts per cycle */
+@keyframes mascot-home-idle {
+  0%    { transform: translateY(0) rotate(0deg) scale(1); }
+  8%    { transform: translateY(-0.15rem) rotate(-3deg) scale(1); }
+  16%   { transform: translateY(0) rotate(0deg) scale(1); }
+  24%   { transform: translateY(-0.1rem) rotate(2deg) scale(1); }
+  30%   { transform: translateY(0) rotate(0deg) scale(1); }
+  38%   { transform: translateY(-0.7rem) rotate(-12deg) scale(1.06); }
+  42%   { transform: translateY(0.05rem) rotate(2deg) scale(0.97); }
+  46%   { transform: translateY(0) rotate(0deg) scale(1); }
+  54%   { transform: translateY(-0.1rem) rotate(0deg) scale(1); }
+  62%   { transform: translateY(0) rotate(0deg) scale(1); }
+  70%   { transform: translateY(-0.6rem) rotate(10deg) scale(1.05); }
+  74%   { transform: translateY(0.05rem) rotate(-1deg) scale(0.98); }
+  78%   { transform: translateY(0) rotate(0deg) scale(1); }
+  90%   { transform: translateY(-0.08rem) rotate(-1deg) scale(1); }
+  100%  { transform: translateY(0) rotate(0deg) scale(1); }
+}
+
+/* Random surprise classes triggered by JS */
+.mascot-btn.mascot-hop {
+  animation: mascot-hop 0.5s var(--ease-bounce) !important;
+}
+.mascot-btn.mascot-spin {
+  animation: mascot-spin 0.6s ease !important;
+}
+.mascot-btn.mascot-wiggle {
+  animation: mascot-wiggle 0.5s ease !important;
+}
+
+@keyframes mascot-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-1.4rem) scale(1.12); }
+  65% { transform: translateY(-0.2rem) scale(0.95); }
+}
+
+@keyframes mascot-spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(360deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes mascot-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-18deg); }
+  40% { transform: rotate(16deg); }
+  60% { transform: rotate(-12deg); }
+  80% { transform: rotate(8deg); }
+}
 
 /* --- Picker overlay --- */
 .picker-overlay {
@@ -243,6 +301,21 @@ body {
   border-color: var(--primary);
   background: rgba(232, 84, 10, 0.1);
   transform: scale(1.1);
+}
+
+/* Staggered pop-in when the picker opens */
+.picker-overlay.open .animal-btn {
+  animation: animal-pop-in 0.35s var(--ease-bounce) both;
+}
+.picker-overlay.open .animal-btn:nth-child(1) { animation-delay: 0.00s; }
+.picker-overlay.open .animal-btn:nth-child(2) { animation-delay: 0.06s; }
+.picker-overlay.open .animal-btn:nth-child(3) { animation-delay: 0.12s; }
+.picker-overlay.open .animal-btn:nth-child(4) { animation-delay: 0.18s; }
+.picker-overlay.open .animal-btn:nth-child(5) { animation-delay: 0.24s; }
+
+@keyframes animal-pop-in {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 /* --- Game carousel --- */
@@ -668,28 +741,76 @@ body {
   line-height: 1;
   text-align: center;
   display: block;
+  position: relative;
+  animation: mascot-game-idle 3s ease-in-out infinite;
+}
+
+/* Gentle idle bob while waiting for an answer */
+@keyframes mascot-game-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35% { transform: translateY(-0.2rem) rotate(3deg); }
+  65% { transform: translateY(-0.15rem) rotate(-2deg); }
 }
 
 .mascot.celebrate {
-  animation: mascot-bounce 0.45s ease;
+  animation: mascot-bounce 0.6s var(--ease-bounce);
 }
 
 .mascot.shake {
-  animation: mascot-shake 0.45s ease;
+  animation: mascot-shake 0.55s ease;
 }
 
+/* Sparkle on correct answer */
+.mascot.celebrate::after {
+  content: '\2728';
+  position: absolute;
+  font-size: 1.5rem;
+  top: -0.3rem;
+  right: -0.6rem;
+  animation: sparkle-float 0.6s ease forwards;
+  pointer-events: none;
+}
+
+/* Sweat drop on wrong answer */
+.mascot.shake::after {
+  content: '\1F4A7';
+  position: absolute;
+  font-size: 1rem;
+  top: 0.1rem;
+  right: -0.4rem;
+  animation: sweat-drop 0.55s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes sparkle-float {
+  0%   { opacity: 1; transform: translateY(0) scale(0.5); }
+  100% { opacity: 0; transform: translateY(-1.2rem) scale(1.3); }
+}
+
+@keyframes sweat-drop {
+  0%   { opacity: 1; transform: translateY(-0.3rem); }
+  100% { opacity: 0; transform: translateY(0.9rem); }
+}
+
+/* Enthusiastic bounce-dance on correct */
 @keyframes mascot-bounce {
-  0% { transform: translateY(0) scale(1); }
-  35% { transform: translateY(-0.4rem) scale(1.08); }
-  70% { transform: translateY(0) scale(0.98); }
-  100% { transform: translateY(0) scale(1); }
+  0%   { transform: translateY(0) rotate(0deg) scale(1); }
+  20%  { transform: translateY(-1rem) rotate(-12deg) scale(1.15); }
+  40%  { transform: translateY(0) rotate(5deg) scale(0.95); }
+  60%  { transform: translateY(-0.4rem) rotate(-3deg) scale(1.05); }
+  80%  { transform: translateY(0) rotate(1deg) scale(0.98); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); }
 }
 
+/* Dramatic shake + shrink on wrong */
 @keyframes mascot-shake {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-11deg); }
-  50% { transform: rotate(11deg); }
-  75% { transform: rotate(-9deg); }
+  0%   { transform: rotate(0deg) scale(1); }
+  15%  { transform: rotate(-14deg) scale(0.9); }
+  30%  { transform: rotate(14deg) scale(0.9); }
+  45%  { transform: rotate(-10deg) scale(0.92); }
+  60%  { transform: rotate(8deg) scale(0.95); }
+  75%  { transform: rotate(-4deg) scale(0.98); }
+  100% { transform: rotate(0deg) scale(1); }
 }
 
 .timer {
@@ -1116,4 +1237,13 @@ body {
   .reading-word { font-size: 2.2rem; }
   .flash-word { font-size: 2.8rem; min-height: 3.2rem; }
   .flash-answer { font-size: 1.15rem; }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .mascot-btn,
+  .mascot,
+  .picker-overlay.open .animal-btn {
+    animation: none !important;
+  }
 }

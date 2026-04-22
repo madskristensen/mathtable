@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const DEFAULT_ROUNDS = 10;
 const MAX_HIGH_SCORES = 10;
-const MASCOT_ANIMATION_DURATION_MS = 450;
+const MASCOT_ANIMATION_DURATION_MS = 600;
 const ANSWER_REVEAL_MS = 900;
 const HOME_ROUTE = '/';
 
@@ -102,6 +102,7 @@ const state = {
   timeLeft: 0,
   pendingGameId: null,
   mascotReactionTimeout: null,
+  mascotSurpriseTimeout: null,
   isHandlingPopState: false,
   currentRoute: HOME_ROUTE,
 };
@@ -295,6 +296,29 @@ function animateMascotReaction(isCorrect) {
 function openAnimalPicker()  { $('picker-overlay').classList.add('open'); }
 function closeAnimalPicker() { $('picker-overlay').classList.remove('open'); }
 
+// Periodic random surprise animations for the home mascot
+const MASCOT_SURPRISES = ['mascot-hop', 'mascot-spin', 'mascot-wiggle'];
+
+function scheduleMascotSurprise() {
+  clearTimeout(state.mascotSurpriseTimeout);
+  const delay = 6000 + Math.random() * 6000; // 6-12 seconds
+  state.mascotSurpriseTimeout = setTimeout(() => {
+    const btn = $('mascot-btn');
+    const homeScreen = $('screen-home');
+    if (btn && homeScreen && homeScreen.classList.contains('active')) {
+      const cls = MASCOT_SURPRISES[Math.floor(Math.random() * MASCOT_SURPRISES.length)];
+      btn.classList.add(cls);
+      btn.addEventListener('animationend', () => btn.classList.remove(cls), { once: true });
+    }
+    scheduleMascotSurprise();
+  }, delay);
+}
+
+function stopMascotSurprises() {
+  clearTimeout(state.mascotSurpriseTimeout);
+  state.mascotSurpriseTimeout = null;
+}
+
 function renderAnimalPicker() {
   const stats = loadStats();
   const root = $('animal-options');
@@ -382,6 +406,10 @@ function showScreen(id, options = {}) {
 
   document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
   $(`screen-${id}`).classList.add('active');
+
+  // Start/stop mascot surprise animations based on active screen
+  if (id === 'home') scheduleMascotSurprise();
+  else stopMascotSurprises();
 
   if (skipHistory || state.isHandlingPopState) return;
 
@@ -1076,6 +1104,7 @@ async function init() {
   updateHomeStats();
   updateMascotDisplay();
   updateHomeSubtitle();
+  scheduleMascotSurprise();
   await navigateToRoute(getHashRoute(), { skipHistory: true });
 
   // Show picker on first ever load (no animal saved yet).
