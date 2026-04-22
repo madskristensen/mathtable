@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
+const MAX_HIGH_SCORES = 10;
 const MASCOT_ANIMATION_DURATION_MS = 450;
 
 const GAME_REGISTRY = {
@@ -234,7 +235,7 @@ function getGameHighScoreEntries(stats, gameId) {
     }
   });
 
-  return entries.sort((a, b) => b.score - a.score).slice(0, 10);
+  return entries.sort((a, b) => b.score - a.score).slice(0, MAX_HIGH_SCORES);
 }
 
 function getHighScore(gameId) {
@@ -242,7 +243,7 @@ function getHighScore(gameId) {
   return getGameHighScoreEntries(stats, gameId)[0] || null;
 }
 
-function saveHighScore(gameId, modeId, score, correct, total) {
+function saveHighScore(gameId, score, correct, total) {
   const stats = loadStats();
   const key = gameId;
   const list = getGameHighScoreEntries(stats, gameId);
@@ -255,7 +256,7 @@ function saveHighScore(gameId, modeId, score, correct, total) {
   });
 
   list.sort((a, b) => b.score - a.score);
-  stats.highScores[key] = list.slice(0, 10);
+  stats.highScores[key] = list.slice(0, MAX_HIGH_SCORES);
 
   const legacyPrefix = `${gameId}:`;
   Object.keys(stats.highScores).forEach((existingKey) => {
@@ -416,7 +417,7 @@ function renderModeCards(gameId, game) {
   getGameModes(game).forEach((mode) => {
     const btn = document.createElement('button');
     btn.className = 'mode-card';
-    const best = mode.kind === 'play' ? getHighScore(gameId, mode.id) : null;
+    const best = mode.kind === 'play' ? getHighScore(gameId) : null;
     const highScoreLabel = mode.kind === 'play'
       ? (best ? `High score: ${best.score}` : 'High score: —')
       : '';
@@ -662,7 +663,7 @@ function endGame() {
   // Skip high score entries when no question was answered (for example, an immediate timeout).
   const trackScores = session.total > 0;
   const isHighScore = trackScores
-    ? saveHighScore(session.gameId, session.modeId, session.score, session.correct, session.total)
+    ? saveHighScore(session.gameId, session.score, session.correct, session.total)
     : false;
   document.getElementById('new-high-score').style.display = isHighScore ? '' : 'none';
 
