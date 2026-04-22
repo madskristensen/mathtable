@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
-const MASCOT_ANIMATION_DURATION_MS = 460;
+const MASCOT_ANIMATION_DURATION_MS = 450;
 
 const GAME_REGISTRY = {
   multiplication: {
