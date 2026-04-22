@@ -118,6 +118,7 @@ body {
 .game-body,
 .mode-content {
   padding: 1.5rem;
+  padding-top: calc(1.5rem + env(safe-area-inset-top));
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
