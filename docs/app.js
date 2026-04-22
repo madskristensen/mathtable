@@ -3,6 +3,7 @@ const THEME_STORAGE_KEY = 'kids_hub_theme_v1';
 const DEFAULT_ROUNDS = 10;
 const MAX_HIGH_SCORES = 10;
 const MASCOT_ANIMATION_DURATION_MS = 450;
+const HOME_ROUTE = '/';
 
 const GAME_REGISTRY = {
   multiplication: {
@@ -36,7 +37,59 @@ const state = {
   pendingMode: null,
   mascotReactionTimeout: null,
   isHandlingPopState: false,
+  currentRoute: HOME_ROUTE,
 };
+
+function normalizeRoute(route) {
+  if (typeof route !== 'string' || !route.trim()) return HOME_ROUTE;
+  let normalized = route.trim();
+  if (normalized.startsWith('#')) normalized = normalized.slice(1);
+  if (!normalized.startsWith('/')) normalized = `/${normalized}`;
+  return normalized;
+}
+
+function getHashRoute() {
+  return normalizeRoute(window.location.hash);
+}
+
+function buildRoute({ gameId = null, modeId = null, modeConfig = {} } = {}) {
+  if (!gameId) return HOME_ROUTE;
+
+  let route = `/${encodeURIComponent(gameId)}`;
+  if (modeId) {
+    route += `/${encodeURIComponent(modeId)}`;
+  }
+
+  const params = new URLSearchParams();
+  Object.entries(modeConfig || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    params.set(key, String(value));
+  });
+
+  const query = params.toString();
+  return query ? `${route}?${query}` : route;
+}
+
+function parseRoute(route) {
+  const normalized = normalizeRoute(route);
+  const routeUrl = new URL(normalized, window.location.origin);
+  const segments = routeUrl.pathname
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => decodeURIComponent(segment));
+
+  const modeConfig = {};
+  routeUrl.searchParams.forEach((value, key) => {
+    modeConfig[key] = value;
+  });
+
+  return {
+    normalized,
+    gameId: segments[0] || null,
+    modeId: segments[1] || null,
+    modeConfig,
+  };
+}
 
 function defaultStats() {
   return {
@@ -95,17 +148,19 @@ function getVisibleDailyStreak(stats) {
 }
 
 function showScreen(id, options = {}) {
-  const { skipHistory = false, replaceHistory = false } = options;
+  const { skipHistory = false, replaceHistory = false, route = state.currentRoute || getHashRoute() } = options;
+  state.currentRoute = normalizeRoute(route);
   document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
   document.getElementById(`screen-${id}`).classList.add('active');
 
   if (skipHistory || state.isHandlingPopState) return;
 
-  const nextState = { screen: id };
+  const nextState = { screen: id, route: state.currentRoute };
+  const nextUrl = `#${state.currentRoute}`;
   if (replaceHistory) {
-    window.history.replaceState(nextState, '', window.location.href);
+    window.history.replaceState(nextState, '', nextUrl);
   } else {
-    window.history.pushState(nextState, '', window.location.href);
+    window.history.pushState(nextState, '', nextUrl);
   }
 }
 
@@ -432,16 +487,23 @@ function renderModeCards(gameId, game) {
   });
 }
 
-function renderModeSelection(gameId, game) {
+function renderModeSelection(gameId, game, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
   state.pendingGameId = gameId;
   state.pendingMode = null;
 
   document.getElementById('mode-game-title').textContent = game.title;
   renderModeCards(gameId, game);
-  showScreen('mode-menu');
+  showScreen('mode-menu', {
+    skipHistory,
+    replaceHistory,
+    route: buildRoute({ gameId }),
+  });
 }
 
-function renderModeOptionPicker(mode) {
+function renderModeOptionPicker(gameId, mode, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
+  state.pendingGameId = gameId;
   state.pendingMode = mode;
   const optionsWrap = document.getElementById('mode-option-grid');
   optionsWrap.innerHTML = '';
@@ -464,7 +526,11 @@ function renderModeOptionPicker(mode) {
     optionsWrap.appendChild(btn);
   });
 
-  showScreen('mode-option-picker');
+  showScreen('mode-option-picker', {
+    skipHistory,
+    replaceHistory,
+    route: buildRoute({ gameId, modeId: mode.id }),
+  });
 }
 
 function updateModeViewTitle(title) {
@@ -480,7 +546,7 @@ async function chooseMode(gameId, modeId) {
   }
 
   if (mode.selection) {
-    renderModeOptionPicker(mode);
+    renderModeOptionPicker(gameId, mode);
     return;
   }
 
@@ -492,7 +558,10 @@ async function chooseMode(gameId, modeId) {
   startMode(gameId, mode.id);
 }
 
-function showModeView(game, mode) {
+function showModeView(game, mode, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
+  state.pendingGameId = game.id;
+  state.pendingMode = mode;
   const viewRoot = document.getElementById('mode-view-body');
   updateModeViewTitle(`${game.title} — ${mode.title}`);
 
@@ -502,10 +571,15 @@ function showModeView(game, mode) {
     viewRoot.innerHTML = '<p class="mode-view-empty">Nothing to show yet.</p>';
   }
 
-  showScreen('mode-view');
+  showScreen('mode-view', {
+    skipHistory,
+    replaceHistory,
+    route: buildRoute({ gameId: game.id, modeId: mode.id }),
+  });
 }
 
-function startMode(gameId, modeId, modeConfig = {}) {
+function startMode(gameId, modeId, modeConfig = {}, options = {}) {
+  const { skipHistory = false, replaceHistory = false } = options;
   stopSessionTimer();
   setTimerVisible(false);
 
@@ -541,7 +615,11 @@ function startMode(gameId, modeId, modeConfig = {}) {
 
   state.currentQuestion = game.createQuestion(state.session);
   renderQuestion();
-  showScreen('game');
+  showScreen('game', {
+    skipHistory,
+    replaceHistory,
+    route: buildRoute({ gameId, modeId, modeConfig }),
+  });
 
   if (session.timedSeconds > 0) {
     startSessionTimer(session.timedSeconds);
@@ -679,12 +757,18 @@ function endGame() {
 
   if (accuracy >= 0.8) launchConfetti();
 
-  showScreen('results');
+  showScreen('results', {
+    route: buildRoute({
+      gameId: session.gameId,
+      modeId: session.modeId,
+      modeConfig: session.modeConfig,
+    }),
+  });
   updateHomeStats();
 }
 
 function goHome(options = {}) {
-  const { skipHistory = false } = options;
+  const { skipHistory = false, replaceHistory = false } = options;
   stopSessionTimer();
   setTimerVisible(false);
 
@@ -699,25 +783,74 @@ function goHome(options = {}) {
   updateMascotDisplay();
   renderGameCards();
   updateHomeSubtitle();
-  showScreen('home', { skipHistory });
+  showScreen('home', {
+    skipHistory,
+    replaceHistory,
+    route: HOME_ROUTE,
+  });
+}
+
+async function navigateToRoute(route, options = {}) {
+  const { skipHistory = true, replaceHistory = false } = options;
+  const { gameId, modeId, modeConfig } = parseRoute(route);
+
+  if (!gameId) {
+    goHome({ skipHistory, replaceHistory });
+    return;
+  }
+
+  if (!GAME_REGISTRY[gameId]) {
+    goHome({ skipHistory: false, replaceHistory: true });
+    return;
+  }
+
+  const game = await loadGame(gameId);
+  state.currentGame = game;
+
+  const stats = loadStats();
+  updateDailyStreak(stats);
+
+  if (!modeId) {
+    const modes = getGameModes(game);
+    if (modes.length > 0) {
+      renderModeSelection(gameId, game, { skipHistory, replaceHistory });
+      return;
+    }
+    startMode(gameId, null, {}, { skipHistory, replaceHistory });
+    return;
+  }
+
+  const mode = getMode(game, modeId);
+  if (!mode) {
+    renderModeSelection(gameId, game, { skipHistory, replaceHistory });
+    return;
+  }
+
+  if (mode.selection) {
+    const selectedValue = modeConfig[mode.selection.key];
+    if (selectedValue === undefined) {
+      renderModeOptionPicker(gameId, mode, { skipHistory, replaceHistory });
+      return;
+    }
+    startMode(gameId, mode.id, { [mode.selection.key]: selectedValue }, { skipHistory, replaceHistory });
+    return;
+  }
+
+  if (mode.kind === 'view') {
+    showModeView(game, mode, { skipHistory, replaceHistory });
+    return;
+  }
+
+  startMode(gameId, mode.id, {}, { skipHistory, replaceHistory });
 }
 
 function handlePopState(event) {
-  const target = event.state && event.state.screen ? event.state.screen : 'home';
+  const route = event.state && event.state.route ? event.state.route : getHashRoute();
   state.isHandlingPopState = true;
-
-  if (target === 'home') {
-    goHome({ skipHistory: true });
-  } else {
-    const screen = document.getElementById(`screen-${target}`);
-    if (screen) {
-      showScreen(target, { skipHistory: true });
-    } else {
-      goHome({ skipHistory: true });
-    }
-  }
-
-  state.isHandlingPopState = false;
+  navigateToRoute(route, { skipHistory: true })
+    .finally(() => {
+      state.isHandlingPopState = false;
+    });
 }
 
 function bindEvents() {
@@ -763,7 +896,15 @@ async function init() {
   updateHomeStats();
   updateMascotDisplay();
   updateHomeSubtitle();
-  showScreen('home', { replaceHistory: true });
+  await navigateToRoute(getHashRoute(), { skipHistory: true });
+
+  const activeScreen = document.querySelector('.screen.active');
+  const activeScreenId = activeScreen ? activeScreen.id.replace('screen-', '') : 'home';
+  window.history.replaceState(
+    { screen: activeScreenId, route: state.currentRoute },
+    '',
+    `#${state.currentRoute}`,
+  );
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
