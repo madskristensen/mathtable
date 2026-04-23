@@ -132,10 +132,15 @@ function poolForMode(modeId) {
 }
 
 function pickQuestion(session, pool) {
+  if (!pool.length) throw new Error('Question pool is empty.');
   if (!Array.isArray(session._questionOrder) || session._questionOrder.length === 0) {
     session._questionOrder = shuffle(pool.map((_, index) => index));
   }
-  const index = session._questionOrder.pop();
+  let index = session._questionOrder.pop();
+  if (typeof index !== 'number') {
+    session._questionOrder = shuffle(pool.map((_, orderIndex) => orderIndex));
+    index = session._questionOrder.pop();
+  }
   return pool[index];
 }
 
