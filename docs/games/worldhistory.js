@@ -30,6 +30,16 @@ const ANCIENT = [
     choices: ['Odysseus', 'Hercules', 'Achilles', 'Jason'] },
   { q: 'Which civilization invented the wheel and writing in Mesopotamia?', a: 'Sumerians',
     choices: ['Sumerians', 'Vikings', 'Mongols', 'Aztecs'] },
+  { q: 'What material did ancient Egyptians write on, made from a river plant?', a: 'Papyrus',
+    choices: ['Papyrus', 'Paper', 'Cloth', 'Leather'] },
+  { q: 'Which queen was the last pharaoh of ancient Egypt?', a: 'Cleopatra',
+    choices: ['Cleopatra', 'Nefertiti', 'Hatshepsut', 'Isis'] },
+  { q: 'What did the ancient Greeks compete in every four years at Olympia?', a: 'The Olympic Games',
+    choices: ['The Olympic Games', 'The World Cup', 'The Colosseum Games', 'The Marathon'] },
+  { q: 'Which ancient empire was known for building roads that connected Europe and Asia?', a: 'Persian Empire',
+    choices: ['Persian Empire', 'Greek Empire', 'Egyptian Empire', 'Chinese Empire'] },
+  { q: 'What was the forum in ancient Rome used for?', a: 'Public meetings and markets',
+    choices: ['Public meetings and markets', 'Gladiator fights', 'Horse races', 'Building pyramids'] },
 ];
 
 const MEDIEVAL = [
@@ -55,6 +65,14 @@ const MEDIEVAL = [
     choices: ['Byzantine Empire', 'British Empire', 'Aztec Empire', 'Mongol Empire'] },
   { q: 'What was a peasant farmer who worked a noble\u2019s land called?', a: 'Serf',
     choices: ['Serf', 'Squire', 'Knight', 'Bishop'] },
+  { q: 'What did medieval monks spend years copying by hand?', a: 'Books',
+    choices: ['Books', 'Maps', 'Paintings', 'Coins'] },
+  { q: 'What was a young knight-in-training called?', a: 'A squire',
+    choices: ['A squire', 'A prince', 'A duke', 'A peasant'] },
+  { q: 'Which Viking explorer reached North America around the year 1000?', a: 'Leif Erikson',
+    choices: ['Leif Erikson', 'Erik the Red', 'Ragnar', 'Harald'] },
+  { q: 'What material did the Chinese invent that changed how battles were fought?', a: 'Gunpowder',
+    choices: ['Gunpowder', 'Steel', 'Concrete', 'Dynamite'] },
 ];
 
 const EXPLORATION = [
@@ -76,6 +94,14 @@ const EXPLORATION = [
     choices: ['Copernicus', 'Newton', 'Einstein', 'Darwin'] },
   { q: 'What rebirth of art and learning began in Italy in the 1400s?', a: 'The Renaissance',
     choices: ['The Renaissance', 'The Reformation', 'The Enlightenment', 'The Revolution'] },
+  { q: 'Which country sent Columbus on his famous voyage in 1492?', a: 'Spain',
+    choices: ['Spain', 'England', 'France', 'Portugal'] },
+  { q: 'What invention by Gutenberg helped spread books all over Europe?', a: 'The printing press',
+    choices: ['The printing press', 'The telescope', 'The compass', 'The typewriter'] },
+  { q: 'Which civilization built Machu Picchu high in the mountains?', a: 'The Incas',
+    choices: ['The Incas', 'The Aztecs', 'The Mayans', 'The Olmecs'] },
+  { q: 'What did explorers call the land of North and South America?', a: 'The New World',
+    choices: ['The New World', 'The Lost World', 'The Old World', 'The Far East'] },
 ];
 
 const MODERN = [
@@ -103,6 +129,14 @@ const MODERN = [
     choices: ['Charles Darwin', 'Isaac Newton', 'Marie Curie', 'Louis Pasteur'] },
   { q: 'Which scientist discovered radioactivity and won two Nobel Prizes?', a: 'Marie Curie',
     choices: ['Marie Curie', 'Rosalind Franklin', 'Ada Lovelace', 'Florence Nightingale'] },
+  { q: 'Which famous ship sank after hitting an iceberg in 1912?', a: 'The Titanic',
+    choices: ['The Titanic', 'The Mayflower', 'The Lusitania', 'The Bismarck'] },
+  { q: 'What was the name of the first satellite launched into space in 1957?', a: 'Sputnik',
+    choices: ['Sputnik', 'Apollo', 'Explorer', 'Voyager'] },
+  { q: 'Which country hosted the first modern Olympic Games in 1896?', a: 'Greece',
+    choices: ['Greece', 'France', 'England', 'United States'] },
+  { q: 'What did people call the race between the US and Soviet Union to reach space?', a: 'The Space Race',
+    choices: ['The Space Race', 'The Moon Race', 'The Star Wars', 'The Rocket Race'] },
 ];
 
 const POOLS = {

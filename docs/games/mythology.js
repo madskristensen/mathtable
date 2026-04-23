@@ -33,6 +33,14 @@ const NORSE = [
     choices: ['Heimdall', 'Tyr', 'Baldur', 'Freyr'] },
   { q: 'What is the great final battle of the Norse gods called?', a: 'Ragnarok',
     choices: ['Ragnarok', 'Armageddon', 'Twilight', 'Fimbulwinter'] },
+  { q: 'Which Norse god sacrificed his hand to bind the wolf Fenrir?', a: 'Tyr',
+    choices: ['Tyr', 'Thor', 'Baldur', 'Heimdall'] },
+  { q: 'What is the land of the frost giants called in Norse myth?', a: 'Jotunheim',
+    choices: ['Jotunheim', 'Niflheim', 'Svartalfheim', 'Muspelheim'] },
+  { q: 'Which beloved Norse god was killed by a mistletoe arrow?', a: 'Baldur',
+    choices: ['Baldur', 'Thor', 'Freyr', 'Tyr'] },
+  { q: 'What is the name of the dragon that gnaws at the roots of Yggdrasil?', a: 'Nidhogg',
+    choices: ['Nidhogg', 'Jormungandr', 'Fenrir', 'Fafnir'] },
 ];
 
 const GREEK = [
@@ -59,6 +67,16 @@ const GREEK = [
   { q: 'What was the name of the giant wooden horse used to enter Troy?', a: 'The Trojan Horse',
     choices: ['The Trojan Horse', 'Pegasus', 'The Wooden Bull', 'The Argo'] },
   { q: 'Who is the queen of the Greek gods and wife of Zeus?', a: 'Hera' },
+  { q: 'Which Greek hero sailed with the Argonauts to find the Golden Fleece?', a: 'Jason',
+    choices: ['Jason', 'Odysseus', 'Perseus', 'Theseus'] },
+  { q: 'Which Greek titan held up the sky on his shoulders?', a: 'Atlas',
+    choices: ['Atlas', 'Prometheus', 'Cronus', 'Hyperion'] },
+  { q: 'Which titan stole fire from the gods and gave it to humans?', a: 'Prometheus',
+    choices: ['Prometheus', 'Atlas', 'Epimetheus', 'Cronus'] },
+  { q: 'What was the name of the three-headed dog guarding the underworld?', a: 'Cerberus',
+    choices: ['Cerberus', 'Fenrir', 'Orthrus', 'Chimera'] },
+  { q: 'Which Greek goddess of the harvest made winter when her daughter was taken?', a: 'Demeter',
+    choices: ['Demeter', 'Hera', 'Athena', 'Persephone'] },
 ];
 
 const ROMAN = [
@@ -84,6 +102,14 @@ const ROMAN = [
     choices: ['Janus', 'Jupiter', 'Saturn', 'Mars'] },
   { q: 'Which twins were said to have founded Rome?', a: 'Romulus and Remus',
     choices: ['Romulus and Remus', 'Castor and Pollux', 'Apollo and Diana', 'Aeneas and Ascanius'] },
+  { q: 'Which Roman god of time ate his own children?', a: 'Saturn',
+    choices: ['Saturn', 'Jupiter', 'Janus', 'Pluto'] },
+  { q: 'Which Trojan hero escaped and later founded the Roman people?', a: 'Aeneas',
+    choices: ['Aeneas', 'Hector', 'Romulus', 'Ulysses'] },
+  { q: 'What is the Roman name for the Greek hero Odysseus?', a: 'Ulysses',
+    choices: ['Ulysses', 'Hercules', 'Aeneas', 'Perseus'] },
+  { q: 'Which Roman goddess tends the sacred flame of the hearth?', a: 'Vesta',
+    choices: ['Vesta', 'Juno', 'Ceres', 'Diana'] },
 ];
 
 const EGYPTIAN = [
@@ -116,6 +142,14 @@ const EGYPTIAN = [
     choices: ['Sekhmet', 'Bastet', 'Hathor', 'Isis'] },
   { q: 'Which cow-horned Egyptian goddess represents joy and motherhood?', a: 'Hathor',
     choices: ['Hathor', 'Isis', 'Bastet', 'Nephthys'] },
+  { q: 'What sacred beetle was a symbol of rebirth in ancient Egypt?', a: 'Scarab',
+    choices: ['Scarab', 'Scorpion', 'Cobra', 'Ibis'] },
+  { q: 'Which Egyptian god has the body of a man and the head of a ram?', a: 'Khnum',
+    choices: ['Khnum', 'Thoth', 'Anubis', 'Sobek'] },
+  { q: 'What was weighed against a feather to judge the dead in Egyptian myth?', a: 'The heart',
+    choices: ['The heart', 'The soul', 'The brain', 'The eyes'] },
+  { q: 'Which Egyptian goddess with scorpion on her head protected against poison?', a: 'Serqet',
+    choices: ['Serqet', 'Bastet', 'Isis', 'Nephthys'] },
 ];
 
 const POOLS = {

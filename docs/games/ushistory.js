@@ -30,6 +30,14 @@ const FOUNDING = [
     choices: ['The Constitution', 'The Mayflower Compact', 'The Declaration', 'The Bill of Rights'] },
   { q: 'What are the first ten amendments to the Constitution called?', a: 'The Bill of Rights',
     choices: ['The Bill of Rights', 'The Articles', 'The Preamble', 'The Ten Commandments'] },
+  { q: 'How many original colonies declared independence from Britain?', a: '13',
+    choices: ['13', '50', '7', '20'] },
+  { q: 'Where did George Washington and his troops spend a freezing winter during the Revolution?', a: 'Valley Forge',
+    choices: ['Valley Forge', 'Philadelphia', 'Boston', 'New York'] },
+  { q: 'Which Founding Father helped write the Declaration AND later became the third president?', a: 'Thomas Jefferson',
+    choices: ['Thomas Jefferson', 'John Adams', 'Benjamin Franklin', 'James Madison'] },
+  { q: 'What was the famous act where colonists dumped tea into Boston Harbor to protest?', a: 'The Boston Tea Party',
+    choices: ['The Boston Tea Party', 'The Stamp Act', 'The Tea Revolt', 'The Harbor Protest'] },
 ];
 
 const EXPANSION = [
@@ -47,6 +55,12 @@ const EXPANSION = [
     choices: ['Thomas Edison', 'Alexander Graham Bell', 'Henry Ford', 'Nikola Tesla'] },
   { q: 'Who invented the telephone?', a: 'Alexander Graham Bell',
     choices: ['Alexander Graham Bell', 'Thomas Edison', 'Samuel Morse', 'Benjamin Franklin'] },
+  { q: 'Which US president made the Louisiana Purchase from France?', a: 'Thomas Jefferson',
+    choices: ['Thomas Jefferson', 'George Washington', 'James Monroe', 'John Adams'] },
+  { q: 'What was the name of the canal that connected the Great Lakes to the Atlantic Ocean?', a: 'The Erie Canal',
+    choices: ['The Erie Canal', 'The Panama Canal', 'The Suez Canal', 'The Hudson Canal'] },
+  { q: 'Which famous frontiersman fought at the Alamo in Texas?', a: 'Davy Crockett',
+    choices: ['Davy Crockett', 'Daniel Boone', 'Buffalo Bill', 'Kit Carson'] },
 ];
 
 const CIVIL_WAR = [
@@ -66,6 +80,12 @@ const CIVIL_WAR = [
     choices: ['Harriet Tubman', 'Rosa Parks', 'Sojourner Truth', 'Frederick Douglass'] },
   { q: 'Where did Lincoln give his famous speech of 1863?', a: 'Gettysburg',
     choices: ['Gettysburg', 'Philadelphia', 'Washington, D.C.', 'Boston'] },
+  { q: 'Which famous speech by Lincoln talked about "government of the people, by the people"?', a: 'The Gettysburg Address',
+    choices: ['The Gettysburg Address', 'The Emancipation Proclamation', 'The Inaugural Address', 'The Farewell Address'] },
+  { q: 'What secret network helped enslaved people escape to freedom in the North?', a: 'The Underground Railroad',
+    choices: ['The Underground Railroad', 'The Freedom Trail', 'The Liberty Line', 'The Escape Route'] },
+  { q: 'Who was a formerly enslaved man who became a powerful speaker against slavery?', a: 'Frederick Douglass',
+    choices: ['Frederick Douglass', 'Booker T. Washington', 'W.E.B. Du Bois', 'John Brown'] },
 ];
 
 const MODERN_US = [
@@ -89,6 +109,14 @@ const MODERN_US = [
     choices: ['Statue of Liberty', 'Lincoln Memorial', 'Mount Rushmore', 'Washington Monument'] },
   { q: 'Which mountain has four giant US presidents carved into it?', a: 'Mount Rushmore',
     choices: ['Mount Rushmore', 'Mount Everest', 'Mount Olympus', 'Mount St. Helens'] },
+  { q: 'What sport did Jackie Robinson integrate when he joined the Brooklyn Dodgers?', a: 'Baseball',
+    choices: ['Baseball', 'Basketball', 'Football', 'Soccer'] },
+  { q: 'Which brave girl walked into an all-white school in New Orleans in 1960?', a: 'Ruby Bridges',
+    choices: ['Ruby Bridges', 'Rosa Parks', 'Harriet Tubman', 'Maya Angelou'] },
+  { q: 'What hard economic time in the 1930s left many Americans without jobs?', a: 'The Great Depression',
+    choices: ['The Great Depression', 'The Dust Bowl', 'The Recession', 'The Gold Rush'] },
+  { q: 'Which amendment gave women the right to vote in 1920?', a: 'The 19th Amendment',
+    choices: ['The 19th Amendment', 'The 13th Amendment', 'The 1st Amendment', 'The 21st Amendment'] },
 ];
 
 const SYMBOLS = [
@@ -106,6 +134,12 @@ const SYMBOLS = [
     choices: ['Independence Day', 'Thanksgiving', 'Memorial Day', 'Labor Day'] },
   { q: 'Which document begins "We the People"?', a: 'The Constitution',
     choices: ['The Constitution', 'The Declaration of Independence', 'The Bill of Rights', 'The Gettysburg Address'] },
+  { q: 'Which branch of government makes the laws?', a: 'Congress',
+    choices: ['Congress', 'The President', 'The Supreme Court', 'The Pentagon'] },
+  { q: 'Which body of water did pioneers cross the Great Plains to eventually reach?', a: 'The Pacific Ocean',
+    choices: ['The Pacific Ocean', 'The Atlantic Ocean', 'The Gulf of Mexico', 'The Great Lakes'] },
+  { q: 'What famous bell in Philadelphia cracked and became a symbol of freedom?', a: 'The Liberty Bell',
+    choices: ['The Liberty Bell', 'The Freedom Bell', 'The Independence Bell', 'The Justice Bell'] },
 ];
 
 const POOLS = {
