@@ -10,6 +10,7 @@ const CATEGORIES = {
   time:      { label: 'Time',      icon: '⏰' },
   reading:   { label: 'Reading',   icon: '📖' },
   geography: { label: 'Geography', icon: '🌍' },
+  history:   { label: 'History',   icon: '📜' },
 };
 
 const GAME_REGISTRY = {
@@ -92,6 +93,22 @@ const GAME_REGISTRY = {
     description: 'Explore Europe and learn its countries!',
     defaultMode: 'quick',
     loader: () => import('./games/europe.js?v=9'),
+  },
+  worldhistory: {
+    title: 'World History',
+    icon: '🌐',
+    category: 'history',
+    description: 'Travel through time and meet the world!',
+    defaultMode: 'all',
+    loader: () => import('./games/worldhistory.js?v=1'),
+  },
+  ushistory: {
+    title: 'US History',
+    icon: '🦅',
+    category: 'history',
+    description: 'Discover the story of the United States!',
+    defaultMode: 'all',
+    loader: () => import('./games/ushistory.js?v=1'),
   },
 };
 

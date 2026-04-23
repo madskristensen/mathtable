@@ -1224,6 +1224,39 @@ body {
   letter-spacing: 0.04em;
 }
 
+/* ── History Games ─────────────────────────────────────────────── */
+
+.history-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.history-question {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--white);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  line-height: 1.25;
+  text-align: center;
+  max-width: 32rem;
+}
+
+.history-answer {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+@media (max-height: 42rem) {
+  .history-question { font-size: 1.25rem; }
+  .history-answer { font-size: 1rem; }
+}
+
 /* ── End Reading Game ─────────────────────────────────────── */
 
 @media (max-height: 42rem) {
