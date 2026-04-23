@@ -137,7 +137,7 @@ function pickQuestion(session, pool) {
     session._questionOrder = shuffle(pool.map((_, index) => index));
   }
   let index = session._questionOrder.pop();
-  if (typeof index !== 'number') {
+  if (index === undefined) {
     session._questionOrder = shuffle(pool.map((_, orderIndex) => orderIndex));
     index = session._questionOrder.pop();
   }
