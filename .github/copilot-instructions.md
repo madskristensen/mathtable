@@ -15,6 +15,8 @@ docs/
     multiplication.js  Multiplication game module
     clock.js           Analog Clock game module
     timemath.js        Time Math game module
+    usstates.js        Find the State (Geography) game module
+    data/              Static asset data shared by games (e.g. us-states.svg)
   sw.js                Service worker (cache-first, update CACHE_NAME on asset changes)
   manifest.json        PWA manifest
 ```
@@ -35,7 +37,7 @@ Add a game by extending `GAME_REGISTRY` in `app.js`:
 GAME_REGISTRY['my-game'] = {
   title: 'My Game',
   icon: '🎯',
-  category: 'math',             // 'math' | 'time' | 'reading' — shown as a badge on the home card
+  category: 'math',             // 'math' | 'time' | 'reading' | 'geography' — shown as a badge on the home card
   description: 'One-line description shown on the home card.',
   defaultMode: 'play',          // used for high-score subtitle on home screen
   loader: () => import('./games/my-game.js'),
@@ -44,7 +46,7 @@ GAME_REGISTRY['my-game'] = {
 
 ### Home screen carousel
 
-Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Cards are grouped by `category`; before the first card of each category the framework inserts a slim **category header** (icon + label) that visually separates the groups (Math, Time, Reading).
+Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Cards are grouped by `category`; before the first card of each category the framework inserts a slim **category header** (icon + label) that visually separates the groups (Math, Time, Reading, Geography).
 
 Each card shows:
 - A large emoji `icon` (~4.5 rem) at the top
@@ -133,7 +135,7 @@ export const game = {
     return { maxRounds: 10 };
   },
 
-  // Required: return a question object for the current session state.
+  // Required: return a question object (or a Promise of one) for the current session state.
   createQuestion(session) {
     return {
       prompt: '<div>…</div>',       // innerHTML for the prompt area
@@ -146,7 +148,7 @@ export const game = {
   },
 
   // Required only for modes with kind: 'view'.
-  // Return an HTML string to render in the mode-view screen.
+  // Return an HTML string (or a Promise of one) to render in the mode-view screen.
   renderModeView(modeId, { stats }) {
     return '<p>…</p>';
   },

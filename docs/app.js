@@ -6,9 +6,10 @@ const ANSWER_REVEAL_MS = 900;
 const HOME_ROUTE = '/';
 
 const CATEGORIES = {
-  math:    { label: 'Math',    icon: '🔢' },
-  time:    { label: 'Time',    icon: '⏰' },
-  reading: { label: 'Reading', icon: '📖' },
+  math:      { label: 'Math',      icon: '🔢' },
+  time:      { label: 'Time',      icon: '⏰' },
+  reading:   { label: 'Reading',   icon: '📖' },
+  geography: { label: 'Geography', icon: '🌍' },
 };
 
 const GAME_REGISTRY = {
@@ -75,6 +76,14 @@ const GAME_REGISTRY = {
     description: 'A word flashes for a moment — pick which one you saw!',
     defaultMode: 'sight',
     loader: () => import('./games/flashword.js?v=16'),
+  },
+  usstates: {
+    title: 'Find the State',
+    icon: '🗺️',
+    category: 'geography',
+    description: 'Spot the highlighted US state. Quick Game, Practice by region, Challenge, and States Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/usstates.js?v=1'),
   },
 };
 
@@ -637,16 +646,17 @@ function renderModeOptionPicker(gameId, mode, options = {}) {
   showScreen('mode-option-picker', { ...options, route: buildRoute({ gameId, modeId: mode.id }) });
 }
 
-function showModeView(game, mode, options = {}) {
+async function showModeView(game, mode, options = {}) {
   state.pendingGameId = game.id;
   const viewRoot = $('mode-view-body');
   $('mode-view-title').textContent = `${game.title} — ${mode.title}`;
 
-  viewRoot.innerHTML = typeof game.renderModeView === 'function'
-    ? game.renderModeView(mode.id, { stats: loadStats() })
-    : '<p class="mode-view-empty">Nothing to show yet.</p>';
-
+  viewRoot.innerHTML = '<p class="mode-view-empty">Loading…</p>';
   showScreen('mode-view', { ...options, route: buildRoute({ gameId: game.id, modeId: mode.id }) });
+
+  viewRoot.innerHTML = typeof game.renderModeView === 'function'
+    ? await game.renderModeView(mode.id, { stats: loadStats() })
+    : '<p class="mode-view-empty">Nothing to show yet.</p>';
 }
 
 async function chooseMode(gameId, modeId) {
@@ -848,7 +858,7 @@ function submitNumpadAnswer(value) {
 
 // ---- Round / game lifecycle ------------------------------------------------
 
-function advanceRound() {
+async function advanceRound() {
   if (!state.session || state.session.ended) return;
   state.session.round += 1;
 
@@ -857,11 +867,12 @@ function advanceRound() {
     return;
   }
   updateSessionDisplay();
-  state.currentQuestion = state.currentGame.createQuestion(state.session);
+  state.currentQuestion = await state.currentGame.createQuestion(state.session);
+  if (!state.session || state.session.ended) return;
   renderQuestion();
 }
 
-function startMode(gameId, modeId, modeConfig = {}, options = {}) {
+async function startMode(gameId, modeId, modeConfig = {}, options = {}) {
   stopSessionTimer();
   setTimerVisible(false);
 
@@ -895,9 +906,13 @@ function startMode(gameId, modeId, modeConfig = {}, options = {}) {
   updateMascotDisplay();
   updateSessionDisplay();
 
-  state.currentQuestion = game.createQuestion(state.session);
-  renderQuestion();
+  $('prompt').innerHTML = '<div class="question-title">Loading…</div>';
+  $('answers').innerHTML = '';
   showScreen('game', { ...options, route: buildRoute({ gameId, modeId, modeConfig }) });
+
+  state.currentQuestion = await game.createQuestion(state.session);
+  if (state.session !== session || session.ended) return;
+  renderQuestion();
 
   if (session.timedSeconds > 0) startSessionTimer(session.timedSeconds);
 }

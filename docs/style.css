@@ -1238,6 +1238,53 @@ body {
   .flash-answer { font-size: 1.15rem; }
 }
 
+/* ── Geography: US States Map ──────────────────────────────────────────── */
+
+.us-map-wrap {
+  width: 100%;
+  max-width: 38rem;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+}
+
+.us-map-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.us-map-state {
+  fill: #f1f5f9;
+  stroke: #334155;
+  stroke-width: 0.6;
+  transition: fill 120ms ease;
+}
+
+.us-map-highlight {
+  fill: #f97316;
+  stroke: #7c2d12;
+  stroke-width: 1.1;
+  filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.55));
+}
+
+/* Heat map (Map View) — reuse the mastery palette from the math maps. */
+.us-map-heatmap .us-map-state.map-new       { fill: rgba(255, 255, 255, 0.55); }
+.us-map-heatmap .us-map-state.map-learning  { fill: rgba(239, 68, 68, 0.85);  }
+.us-map-heatmap .us-map-state.map-good      { fill: rgba(245, 158, 11, 0.9);  }
+.us-map-heatmap .us-map-state.map-mastered  { fill: rgba(16, 185, 129, 0.92); }
+
+/* Smaller text for long state names so "South Carolina" fits on one line. */
+.answer-btn--state .answer-main {
+  font-size: 0.95rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .answer-btn--state .answer-main { font-size: 0.85rem; }
+}
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .mascot-btn,
@@ -1245,4 +1292,5 @@ body {
   .picker-overlay.open .animal-btn {
     animation: none !important;
   }
+  .us-map-state { transition: none; }
 }
