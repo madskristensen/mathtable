@@ -127,7 +127,9 @@ function pickQuestion(session, pool) {
     session._questionOrder = shuffle(pool.map((_, index) => index));
   }
   const index = session._questionOrder.pop();
-  if (index === undefined) throw new Error('Question order exhausted unexpectedly.');
+  if (index === undefined) {
+    throw new Error('Question order exhausted. This should not happen as maxRounds is capped to pool size.');
+  }
   return pool[index];
 }
 
@@ -162,7 +164,6 @@ export const game = {
     const poolSize = poolForMode(modeId).length;
     return {
       maxRounds: Math.min(10, poolSize),
-      _questionOrder: [],
     };
   },
 
