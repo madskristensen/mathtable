@@ -495,6 +495,32 @@ body {
   padding: 0.22rem 0.65rem;
 }
 
+/* Star-rating display on home cards (replaces the high-score pill). */
+.game-card-score .stars {
+  display: inline-flex;
+  gap: 0.12rem;
+  background: transparent;
+  letter-spacing: 0.02em;
+}
+.game-card .game-card-score:has(.stars) {
+  background: transparent;
+  border: none;
+  padding: 0.1rem 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.game-card-score .star {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.game-card-score .star.filled {
+  color: #f5b400;
+  text-shadow: 0 0 6px rgba(245, 180, 0, 0.45);
+}
+.game-card-score .star.empty {
+  color: color-mix(in srgb, var(--card-accent) 35%, rgba(0, 0, 0, 0.18));
+}
+
 /* Hide score pills on cards/lists when no score has been recorded yet */
 .game-card-score:empty,
 .mode-card-score:empty { display: none; }
@@ -1331,4 +1357,28 @@ body {
     animation: none !important;
   }
   .us-map-state { transition: none; }
+}
+
+/* ---------- App footer (home screen) ---------- */
+.app-footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 32rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.app-footer-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
 }

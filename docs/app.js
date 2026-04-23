@@ -476,6 +476,47 @@ function highScoreLabel(gameId) {
   return best ? `High score: ${best.score}` : 'High score: —';
 }
 
+// Best accuracy (correct / total) across all stored runs for a game.
+// Returns null if the game has no recorded runs with answered questions.
+function getBestAccuracy(gameId) {
+  const entries = getGameHighScoreEntries(loadStats(), gameId);
+  let best = null;
+  for (const entry of entries) {
+    if (!entry || !entry.total) continue;
+    const acc = entry.correct / entry.total;
+    if (best === null || acc > best) best = acc;
+  }
+  return best;
+}
+
+// Star-rating HTML used on home-screen game cards. Encourages kids to keep
+// playing by visualising progress: empty stars when a game hasn't been
+// played, more filled stars as best accuracy improves.
+function progressStarsHtml(gameId) {
+  const acc = getBestAccuracy(gameId);
+  let filled;
+  let label;
+  if (acc === null) {
+    filled = 0;
+    label = 'Not played yet — tap to start!';
+  } else {
+    filled = acc >= 1 ? 5
+      : acc >= 0.8 ? 4
+      : acc >= 0.6 ? 3
+      : acc >= 0.4 ? 2
+      : acc > 0    ? 1
+      : 0;
+    label = `Best accuracy: ${Math.round(acc * 100)}%`;
+  }
+  let stars = '';
+  for (let i = 0; i < 5; i++) {
+    const cls = i < filled ? 'star filled' : 'star empty';
+    const glyph = i < filled ? '★' : '☆';
+    stars += `<span class="${cls}" aria-hidden="true">${glyph}</span>`;
+  }
+  return `<span class="stars" role="img" aria-label="${label}" title="${label}">${stars}</span>`;
+}
+
 // ---- Home screen -----------------------------------------------------------
 
 function renderGameCards() {
@@ -519,7 +560,7 @@ function renderGameCards() {
       icon: game.icon,
       title: game.title,
       desc: game.description,
-      scoreLabel: highScoreLabel(gameId),
+      scoreLabel: progressStarsHtml(gameId),
       onClick: () => startGame(gameId),
     });
     currentGroupRow.appendChild(card);
@@ -542,16 +583,26 @@ function renderGameCards() {
 
   const updateActiveDot = () => {
     if (!cards.length) return;
-    const carouselRect = carousel.getBoundingClientRect();
-    const carouselCentre = carouselRect.left + carouselRect.width / 2;
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    cards.forEach((card, i) => {
-      const r = card.getBoundingClientRect();
-      const cardCentre = r.left + r.width / 2;
-      const dist = Math.abs(cardCentre - carouselCentre);
-      if (dist < bestDist) { bestDist = dist; bestIdx = i; }
-    });
+    let bestIdx;
+    // At the scroll extremes the last/first card may never reach the
+    // carousel centre, so snap to the end card explicitly.
+    const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+    if (carousel.scrollLeft >= maxScroll - 1) {
+      bestIdx = cards.length - 1;
+    } else if (carousel.scrollLeft <= 1) {
+      bestIdx = 0;
+    } else {
+      const carouselRect = carousel.getBoundingClientRect();
+      const carouselCentre = carouselRect.left + carouselRect.width / 2;
+      let bestDist = Infinity;
+      bestIdx = 0;
+      cards.forEach((card, i) => {
+        const r = card.getBoundingClientRect();
+        const cardCentre = r.left + r.width / 2;
+        const dist = Math.abs(cardCentre - carouselCentre);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      });
+    }
     dots.forEach((d, i) => d.classList.toggle('active', i === bestIdx));
   };
 
