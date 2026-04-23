@@ -104,8 +104,9 @@ body {
 
 #app {
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  /* Use min-height instead of height so Safari can expand when the address bar hides */
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   overflow: hidden;
 }
@@ -131,9 +132,9 @@ body {
 .mode-content {
   padding: 1.5rem;
   padding-top: calc(1.5rem + env(safe-area-inset-top));
-  /* Use the safe-area inset alone (no extra padding) so scrollable content
-     extends all the way down to the iOS home-indicator on standalone PWAs. */
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Base padding with safe area inset for iOS. The safe area is 0 on devices without
+     a home indicator, ensuring visual breathing room on all devices. */
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
 
 .home-content {
