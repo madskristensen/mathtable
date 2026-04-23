@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v43';
+const CACHE_NAME = 'kids-hub-v44';
 const ASSETS = [
   './',
   './index.html',
@@ -17,9 +17,8 @@ const ASSETS = [
   './games/timemath.js?v=16',
   './games/reading.js?v=16',
   './games/flashword.js?v=16',
-  './games/usstates.js?v=1',
-  './games/uscapitals.js?v=1',
-  './games/europe.js?v=8',
+  './games/usstates.js?v=2',
+  './games/europe.js?v=9',
   './games/data/us-states.js',
   './games/data/us-states.svg?v=1',
   './games/data/europe.js',

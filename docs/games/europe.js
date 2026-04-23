@@ -66,8 +66,14 @@ function pickDistractors(correctCode, pool) {
   return shuffle(topUp).slice(0, 3);
 }
 
-function buildAnswers(correctCode, pool) {
+function buildAnswers(correctCode, pool, mode) {
   const codes = shuffle([correctCode, ...pickDistractors(correctCode, pool)]);
+  if (mode === MODE_IDS.CAPITALS) {
+    return codes.map((code) => ({
+      value: COUNTRIES[code].capital,
+      label: `<span class="answer-main">${COUNTRIES[code].capital}</span>`,
+    }));
+  }
   return codes.map((code) => ({
     value: code,
     label: `<span class="answer-main">${COUNTRIES[code].name}</span>`,
@@ -153,6 +159,13 @@ export const game = {
       kind: 'play',
     },
     {
+      id: MODE_IDS.CAPITALS,
+      title: 'Capitals',
+      icon: '🏛️',
+      description: 'A country is highlighted — pick its capital!',
+      kind: 'play',
+    },
+    {
       id: MODE_IDS.MAP,
       title: 'Europe Map',
       icon: '🗺️',
@@ -163,6 +176,7 @@ export const game = {
   initSession(modeId, modeConfig, baseSession) {
     if (modeId === MODE_IDS.PRACTICE) return { maxRounds: 10 };
     if (modeId === MODE_IDS.CHALLENGE) return { maxRounds: null, timedSeconds: 60 };
+    if (modeId === MODE_IDS.CAPITALS) return { maxRounds: 10 };
     return { maxRounds: baseSession.maxRounds };
   },
   async createQuestion(session) {
@@ -170,6 +184,21 @@ export const game = {
     const pool = pickAnswerPool(session);
     const correctCode = pool[randomInt(0, pool.length - 1)];
     const countryName = COUNTRIES[correctCode].name;
+    const isCapitals = session?.modeId === MODE_IDS.CAPITALS;
+
+    if (isCapitals) {
+      return {
+        prompt: `
+          <div class="question-title">What is the capital of <strong>${countryName}</strong>?</div>
+          <div class="us-map-wrap eu-map-wrap">${svgWithHighlight(svgRoot, correctCode)}</div>
+        `,
+        answers: buildAnswers(correctCode, pool, MODE_IDS.CAPITALS),
+        answerClass: 'answer-btn--state',
+        correctValue: COUNTRIES[correctCode].capital,
+        // Stored as key "eucapx${CODE}" by recordProblemResult.
+        meta: { fact: { a: 'eucap', b: correctCode } },
+      };
+    }
 
     return {
       prompt: `

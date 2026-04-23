@@ -4,6 +4,7 @@ export const MODE_IDS = {
   QUICK: 'quick',
   PRACTICE: 'practice',
   CHALLENGE: 'challenge',
+  CAPITALS: 'capitals',
   MAP: 'map',
 };
 

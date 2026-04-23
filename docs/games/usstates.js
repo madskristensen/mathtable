@@ -51,8 +51,14 @@ function pickDistractors(correctCode, pool) {
   return shuffle(topUp).slice(0, 3);
 }
 
-function buildAnswers(correctCode, pool) {
+function buildAnswers(correctCode, pool, mode) {
   const codes = shuffle([correctCode, ...pickDistractors(correctCode, pool)]);
+  if (mode === MODE_IDS.CAPITALS) {
+    return codes.map((code) => ({
+      value: STATES[code].capital,
+      label: `<span class="answer-main">${STATES[code].capital}</span>`,
+    }));
+  }
   return codes.map((code) => ({
     value: code,
     label: `<span class="answer-main">${STATES[code].name}</span>`,
@@ -137,6 +143,13 @@ export const game = {
       kind: 'play',
     },
     {
+      id: MODE_IDS.CAPITALS,
+      title: 'Capitals',
+      icon: '🏛️',
+      description: 'A state is highlighted — pick its capital!',
+      kind: 'play',
+    },
+    {
       id: MODE_IDS.MAP,
       title: 'States Map',
       icon: '🗺️',
@@ -151,6 +164,9 @@ export const game = {
     if (modeId === MODE_IDS.CHALLENGE) {
       return { maxRounds: null, timedSeconds: 60 };
     }
+    if (modeId === MODE_IDS.CAPITALS) {
+      return { maxRounds: 10 };
+    }
     return { maxRounds: baseSession.maxRounds };
   },
   async createQuestion(session) {
@@ -158,6 +174,21 @@ export const game = {
     const pool = pickAnswerPool(session);
     const correctCode = pool[randomInt(0, pool.length - 1)];
     const stateName = STATES[correctCode].name;
+    const isCapitals = session?.modeId === MODE_IDS.CAPITALS;
+
+    if (isCapitals) {
+      return {
+        prompt: `
+          <div class="question-title">What is the capital of <strong>${stateName}</strong>?</div>
+          <div class="us-map-wrap">${svgWithHighlight(svgRoot, correctCode)}</div>
+        `,
+        answers: buildAnswers(correctCode, pool, MODE_IDS.CAPITALS),
+        answerClass: 'answer-btn--state',
+        correctValue: STATES[correctCode].capital,
+        // Stored as key "capx${CODE}" by recordProblemResult.
+        meta: { fact: { a: 'cap', b: correctCode } },
+      };
+    }
 
     return {
       prompt: `
