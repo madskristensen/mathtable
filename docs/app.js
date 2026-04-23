@@ -110,6 +110,14 @@ const GAME_REGISTRY = {
     defaultMode: 'all',
     loader: () => import('./games/ushistory.js?v=1'),
   },
+  mythology: {
+    title: 'Mythology',
+    icon: '⚡',
+    category: 'history',
+    description: 'Meet the gods and heroes of ancient myths!',
+    defaultMode: 'all',
+    loader: () => import('./games/mythology.js?v=1'),
+  },
 };
 
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];
