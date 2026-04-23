@@ -1382,7 +1382,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   max-width: 32rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.78);
@@ -1392,6 +1392,18 @@ body {
 
 .app-footer p {
   margin: 0;
+}
+
+.app-footer a {
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.app-footer a:hover,
+.app-footer a:focus-visible {
+  color: inherit;
 }
 
 .app-footer-icon {
