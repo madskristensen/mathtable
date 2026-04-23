@@ -126,11 +126,8 @@ function pickQuestion(session, pool) {
   if (!Array.isArray(session._questionOrder) || session._questionOrder.length === 0) {
     session._questionOrder = shuffle(pool.map((_, index) => index));
   }
-  let index = session._questionOrder.pop();
-  if (index === undefined) {
-    session._questionOrder = shuffle(pool.map((_, orderIndex) => orderIndex));
-    index = session._questionOrder.pop();
-  }
+  const index = session._questionOrder.pop();
+  if (index === undefined) throw new Error('Question order exhausted unexpectedly.');
   return pool[index];
 }
 
