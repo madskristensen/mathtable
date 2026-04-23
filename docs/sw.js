@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v49';
+const CACHE_NAME = 'kids-hub-v50';
 const ASSETS = [
   './',
   './index.html',
@@ -51,17 +51,36 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
+// Allow the page to ask a waiting worker to activate immediately.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Cache-first with stale-while-revalidate:
+//  1. Serve from cache immediately if present (fast, works offline).
+//  2. In parallel, fetch from the network and refresh the cache for next time.
+//  3. If nothing is cached, wait for the network and cache the response.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
+  // Never cache the service worker script itself — the browser handles its
+  // own update check via byte-diffing sw.js.
   if (e.request.url.includes('sw.js')) return;
 
   e.respondWith(
-    fetch(e.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-        return response;
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(e.request).then((cached) => {
+        const networkFetch = fetch(e.request)
+          .then((response) => {
+            if (response && response.ok) {
+              cache.put(e.request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => cached);
+        return cached || networkFetch;
       })
-      .catch(() => caches.match(e.request))
+    )
   );
 });

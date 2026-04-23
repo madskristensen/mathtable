@@ -1223,9 +1223,78 @@ async function init() {
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+      navigator.serviceWorker
+        .register('sw.js', { updateViaCache: 'none' })
+        .then((registration) => setupUpdateChecks(registration))
+        .catch(() => {});
     });
   }
+}
+
+// Cache-first PWA update flow:
+//   - The service worker serves cached assets immediately (fast, offline-ready).
+//   - This function asks the browser to re-check sw.js periodically. When the
+//     file changes byte-for-byte, the browser installs the new worker in the
+//     background and fires `updatefound`. Once it reaches the `installed`
+//     state with an existing controller present, an update is ready to apply.
+//   - We then show a small banner. On confirm, we tell the waiting worker to
+//     skipWaiting(); the resulting `controllerchange` triggers a reload so
+//     the new version takes over cleanly.
+function setupUpdateChecks(registration) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
+  const promptUpdate = (worker) => {
+    showUpdateBanner(() => {
+      worker.postMessage({ type: 'SKIP_WAITING' });
+    });
+  };
+
+  // A worker may already be waiting from a previous visit.
+  if (registration.waiting && navigator.serviceWorker.controller) {
+    promptUpdate(registration.waiting);
+  }
+
+  registration.addEventListener('updatefound', () => {
+    const newWorker = registration.installing;
+    if (!newWorker) return;
+    newWorker.addEventListener('statechange', () => {
+      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+        promptUpdate(newWorker);
+      }
+    });
+  });
+
+  // Re-check for a new sw.js when the tab becomes visible and every 30 minutes.
+  const checkForUpdate = () => registration.update().catch(() => {});
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdate();
+  });
+  setInterval(checkForUpdate, 30 * 60 * 1000);
+}
+
+function showUpdateBanner(onConfirm) {
+  if (document.getElementById('update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.className = 'update-banner';
+  banner.innerHTML = `
+    <span class="update-banner-text">A new version is available.</span>
+    <button type="button" class="update-banner-btn" id="update-banner-reload">Reload</button>
+    <button type="button" class="update-banner-close" id="update-banner-close" aria-label="Dismiss">×</button>
+  `;
+  document.body.appendChild(banner);
+  document.getElementById('update-banner-reload').addEventListener('click', () => {
+    banner.remove();
+    onConfirm();
+  });
+  document.getElementById('update-banner-close').addEventListener('click', () => {
+    banner.remove();
+  });
 }
 
 init();

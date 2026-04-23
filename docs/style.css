@@ -1383,3 +1383,49 @@ body {
   font-size: 1rem;
   flex-shrink: 0;
 }
+
+/* Update-available banner shown when a new service worker is waiting. */
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+  max-width: calc(100vw - 2rem);
+}
+
+.update-banner-text {
+  flex: 1;
+}
+
+.update-banner-btn {
+  cursor: pointer;
+  border: none;
+  background: #fff;
+  color: var(--primary-dark);
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: calc(var(--radius) - 4px);
+  min-height: 2.5rem;
+}
+
+.update-banner-close {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}

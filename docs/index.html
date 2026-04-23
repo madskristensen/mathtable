@@ -152,11 +152,6 @@
     </div>
   </div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-    }
-  </script>
   <script type="module" src="app.js?v=16"></script>
 </body>
 </html>
