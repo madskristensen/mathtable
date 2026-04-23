@@ -85,6 +85,22 @@ const GAME_REGISTRY = {
     defaultMode: 'quick',
     loader: () => import('./games/usstates.js?v=1'),
   },
+  uscapitals: {
+    title: 'State Capitals',
+    icon: '🏛️',
+    category: 'geography',
+    description: 'Match each US state to its capital. Quick Game, Practice by region, Challenge, and Capitals Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/uscapitals.js?v=1'),
+  },
+  europe: {
+    title: 'Find the Country',
+    icon: '🇪🇺',
+    category: 'geography',
+    description: 'Spot the highlighted European country. Quick Game, Practice by region, Challenge, and Europe Map.',
+    defaultMode: 'quick',
+    loader: () => import('./games/europe.js?v=8'),
+  },
 };
 
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];

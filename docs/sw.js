@@ -1,8 +1,8 @@
-const CACHE_NAME = 'kids-hub-v35';
+const CACHE_NAME = 'kids-hub-v43';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=2',
+  './style.css?v=3',
   './app.js?v=16',
   './manifest.json',
   './favicon.svg',
@@ -18,8 +18,12 @@ const ASSETS = [
   './games/reading.js?v=16',
   './games/flashword.js?v=16',
   './games/usstates.js?v=1',
+  './games/uscapitals.js?v=1',
+  './games/europe.js?v=8',
   './games/data/us-states.js',
   './games/data/us-states.svg?v=1',
+  './games/data/europe.js',
+  './games/data/europe.svg?v=1',
 ];
 
 self.addEventListener('install', (e) => {

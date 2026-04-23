@@ -1249,6 +1249,11 @@ body {
   padding: 0.5rem;
 }
 
+/* The Europe map is wider than tall, so let it use more horizontal space. */
+.eu-map-wrap {
+  max-width: 56rem;
+}
+
 .us-map-svg {
   display: block;
   width: 100%;
