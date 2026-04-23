@@ -131,7 +131,9 @@ body {
 .mode-content {
   padding: 1.5rem;
   padding-top: calc(1.5rem + env(safe-area-inset-top));
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  /* Use the safe-area inset alone (no extra padding) so scrollable content
+     extends all the way down to the iOS home-indicator on standalone PWAs. */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .home-content {
