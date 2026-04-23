@@ -72,13 +72,25 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  /* Solid base color tints iOS safe areas (notch) and rubber-band over-scroll
-     regions so they don't flash white when the address bar collapses. */
+  /* Solid base color tints iOS safe areas (notch / home-indicator) and
+     rubber-band over-scroll regions so they don't flash white. The full
+     gradient is painted by `body::before` below to guarantee it covers the
+     entire viewport on iOS standalone PWAs (where `background-attachment:
+     fixed` on html/body is unreliable behind the home-indicator safe area). */
   background-color: var(--bg-start);
+}
+
+/* Full-viewport gradient layer. Using a `position: fixed` pseudo-element
+   ensures the gradient covers the entire screen — including the iPhone
+   safe-area / home-indicator region — so the bottom of the screen matches
+   the rest of the background instead of showing a different-colored band. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image: linear-gradient(145deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
-  /* Anchor the gradient to the viewport so it stays painted behind the safe
-     areas on iOS instead of being clipped to the document box. */
-  background-attachment: fixed;
+  pointer-events: none;
 }
 
 body {
