@@ -2,7 +2,7 @@
 // and famous stories from Norse, Greek, Roman, and Egyptian mythology.
 // Distractors are drawn from the same pantheon's answer pool so wrong
 // choices stay plausible.
-import { shuffle, randomItem } from './_shared.js';
+import { shuffle } from './_shared.js';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers
@@ -131,6 +131,14 @@ function poolForMode(modeId) {
   return [...NORSE, ...GREEK, ...ROMAN, ...EGYPTIAN];
 }
 
+function pickQuestion(session, pool) {
+  if (!Array.isArray(session._questionOrder) || session._questionOrder.length === 0) {
+    session._questionOrder = shuffle(pool.map((_, index) => index));
+  }
+  const index = session._questionOrder.pop();
+  return pool[index];
+}
+
 function buildAnswers(question, pool) {
   if (Array.isArray(question.choices) && question.choices.length >= 2) {
     return shuffle(question.choices).map((c) => ({ value: c, label: `<span class="history-answer">${c}</span>` }));
@@ -157,13 +165,17 @@ export const game = {
     { id: 'egyptian', title: 'Egyptian',      icon: '\uD83D\uDC34',    description: 'Ra, Anubis, Isis and the Nile gods.',  kind: 'play' },
   ],
 
-  initSession() {
-    return { maxRounds: 10 };
+  initSession(modeId) {
+    const poolSize = poolForMode(modeId).length;
+    return {
+      maxRounds: Math.min(10, poolSize),
+      _questionOrder: [],
+    };
   },
 
   createQuestion(session) {
     const pool = poolForMode(session?.modeId);
-    const question = randomItem(pool);
+    const question = pickQuestion(session, pool);
     return {
       prompt: `
         <div class="history-prompt">
