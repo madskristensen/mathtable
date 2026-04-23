@@ -362,7 +362,7 @@ body {
   --card-accent: var(--primary);
   flex-shrink: 0;
   width: 10.5rem;
-  min-height: 16rem;
+  height: 16rem;
   border: 1.5px solid var(--card-border);
   border-radius: calc(var(--radius) * 1.2);
   background: var(--card-bg);

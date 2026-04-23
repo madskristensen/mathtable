@@ -1,8 +1,8 @@
-const CACHE_NAME = 'kids-hub-v44';
+const CACHE_NAME = 'kids-hub-v46';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=3',
+  './style.css?v=5',
   './app.js?v=16',
   './manifest.json',
   './favicon.svg',
