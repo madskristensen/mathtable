@@ -1,12 +1,12 @@
-const CACHE_NAME = 'kids-hub-v56';
+const CACHE_NAME = 'kids-hub-v57';
 const RUNTIME_CACHE = 'kids-hub-runtime-v1';
 const RUNTIME_CACHE_MAX_ENTRIES = 60;
 
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=10',
-  './app.js?v=17',
+  './style.css?v=11',
+  './app.js?v=18',
   './manifest.json',
   './favicon.svg',
   './icon-192.png',

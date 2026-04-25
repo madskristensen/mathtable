@@ -4,6 +4,10 @@ const MAX_HIGH_SCORES = 10;
 const MASCOT_ANIMATION_DURATION_MS = 600;
 const ANSWER_REVEAL_MS = 900;
 const HOME_ROUTE = '/';
+const USE_JS_VIEWPORT_HEIGHT =
+  typeof CSS === 'undefined' ||
+  typeof CSS.supports !== 'function' ||
+  !CSS.supports('height', '100dvh');
 
 const CATEGORIES = {
   math:      { label: 'Math',      icon: '🔢' },
@@ -310,15 +314,28 @@ function recordProblemResult(a, b, correct) {
 function applyAnimalTheme(animal) {
   // Apply on the root <html> element (not <body>) so the per-animal
   // `--bg-*` custom properties also cascade to `html`. iOS Safari tints
-  // the rubber-band over-scroll regions using the `<html>` element's
-  // background-color, so the theme variables must be available there for
-  // those areas to follow the current theme.
-  //
-  // Note: we deliberately do NOT set `<meta name="theme-color">`. Letting
-  // Safari sample its URL/status bar tint from the actual page background
-  // means the chrome blends with the gradient automatically and updates
-  // when the user changes the mascot, without per-theme bookkeeping.
+  // the notch / home-indicator / browser chrome using the `<html>` element's
+  // background-color, so the theme variables must be available there.
   document.documentElement.dataset.animal = animal || DEFAULT_MASCOT;
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    const bgStart = getComputedStyle(document.documentElement).getPropertyValue('--bg-start').trim();
+    if (bgStart) themeMeta.setAttribute('content', bgStart);
+  }
+}
+
+function updateDynamicViewportHeight() {
+  if (!USE_JS_VIEWPORT_HEIGHT) return;
+  const height = window.visualViewport?.height || window.innerHeight;
+  if (height) document.documentElement.style.setProperty('--app-height', `${height}px`);
+}
+
+function initDynamicViewportHeight() {
+  updateDynamicViewportHeight();
+  if (!USE_JS_VIEWPORT_HEIGHT) return;
+  window.addEventListener('resize', updateDynamicViewportHeight);
+  window.addEventListener('orientationchange', updateDynamicViewportHeight);
+  window.visualViewport?.addEventListener('resize', updateDynamicViewportHeight);
 }
 
 function updateMascotDisplay() {
@@ -1209,6 +1226,7 @@ function bindEvents() {
 }
 
 async function init() {
+  initDynamicViewportHeight();
   bindEvents();
   renderAnimalPicker();
   renderGameCards();
