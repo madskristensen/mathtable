@@ -317,10 +317,24 @@ function applyAnimalTheme(animal) {
   // the notch / home-indicator / browser chrome using the `<html>` element's
   // background-color, so the theme variables must be available there.
   document.documentElement.dataset.animal = animal || DEFAULT_MASCOT;
-  const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) {
-    const bgStart = getComputedStyle(document.documentElement).getPropertyValue('--bg-start').trim();
-    if (bgStart) themeMeta.setAttribute('content', bgStart);
+  const rootStyle = getComputedStyle(document.documentElement);
+  const bgStart = rootStyle.getPropertyValue('--bg-start').trim();
+  if (bgStart) {
+    document.documentElement.style.backgroundColor = bgStart;
+    document.body.style.backgroundColor = bgStart;
+    replaceThemeColorMeta(bgStart);
+  }
+}
+
+function replaceThemeColorMeta(color) {
+  const existingMeta = document.querySelector('meta[name="theme-color"]');
+  const meta = document.createElement('meta');
+  meta.name = 'theme-color';
+  meta.content = color;
+  if (existingMeta) {
+    existingMeta.replaceWith(meta);
+  } else {
+    document.head.appendChild(meta);
   }
 }
 
