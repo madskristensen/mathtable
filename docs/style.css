@@ -27,35 +27,35 @@
 }
 
 /* 🦊 Fox — warm orange-red (default) */
-body[data-animal='🦊'] {
+:root[data-animal='🦊'] {
   --bg-start: #e8540a;
   --bg-mid: #c4390f;
   --bg-end: #7c3aed;
 }
 
 /* 🐺 Wolf — cool slate-blue */
-body[data-animal='🐺'] {
+:root[data-animal='🐺'] {
   --bg-start: #374151;
   --bg-mid: #1e3a5f;
   --bg-end: #312e81;
 }
 
 /* 🐯 Tiger — golden amber */
-body[data-animal='🐯'] {
+:root[data-animal='🐯'] {
   --bg-start: #d97706;
   --bg-mid: #b45309;
   --bg-end: #92400e;
 }
 
 /* 🐶 Dog — sky blue */
-body[data-animal='🐶'] {
+:root[data-animal='🐶'] {
   --bg-start: #0369a1;
   --bg-mid: #0284c7;
   --bg-end: #0e7490;
 }
 
 /* 🐱 Cat — purple-pink */
-body[data-animal='🐱'] {
+:root[data-animal='🐱'] {
   --bg-start: #7c3aed;
   --bg-mid: #a21caf;
   --bg-end: #be185d;
