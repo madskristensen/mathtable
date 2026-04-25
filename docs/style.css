@@ -97,28 +97,6 @@ html, body {
   background-size: 100% var(--app-large-height);
 }
 
-html::before,
-html::after {
-  content: '';
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  pointer-events: none;
-}
-
-html::before {
-  top: 0;
-  height: max(env(safe-area-inset-top), 0px);
-  background: var(--bg-start);
-}
-
-html::after {
-  bottom: 0;
-  height: max(env(safe-area-inset-bottom), 0px);
-  background: var(--bg-end);
-}
-
 /* Full-viewport gradient layer. Using a `position: fixed` pseudo-element
    ensures the gradient covers the entire screen — including the iPhone
    safe-area / home-indicator region — so the bottom of the screen matches
