@@ -313,29 +313,27 @@ function recordProblemResult(a, b, correct) {
 
 function applyAnimalTheme(animal) {
   // Apply on the root <html> element (not <body>) so the per-animal
-  // `--bg-*` custom properties also cascade to `html`. iOS Safari tints
-  // the notch / home-indicator / browser chrome using the `<html>` element's
-  // background-color, so the theme variables must be available there.
+  // `--bg-*` custom properties also cascade to the safe-area paint layers.
+  // iOS Safari does not reliably re-sample browser chrome colors until the
+  // page is reopened, so the dynamic part has to be painted by the page.
   document.documentElement.dataset.animal = animal || DEFAULT_MASCOT;
   const rootStyle = getComputedStyle(document.documentElement);
   const bgStart = rootStyle.getPropertyValue('--bg-start').trim();
   if (bgStart) {
     document.documentElement.style.backgroundColor = bgStart;
     document.body.style.backgroundColor = bgStart;
-    replaceThemeColorMeta(bgStart);
+    setThemeColorMeta(bgStart);
   }
 }
 
-function replaceThemeColorMeta(color) {
-  const existingMeta = document.querySelector('meta[name="theme-color"]');
-  const meta = document.createElement('meta');
-  meta.name = 'theme-color';
-  meta.content = color;
-  if (existingMeta) {
-    existingMeta.replaceWith(meta);
-  } else {
+function setThemeColorMeta(color) {
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'theme-color';
     document.head.appendChild(meta);
   }
+  meta.content = color;
 }
 
 function updateDynamicViewportHeight() {
