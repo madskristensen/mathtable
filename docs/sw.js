@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v60';
+const CACHE_NAME = 'kids-hub-v61';
 const RUNTIME_CACHE = 'kids-hub-runtime-v1';
 const RUNTIME_CACHE_MAX_ENTRIES = 60;
 
