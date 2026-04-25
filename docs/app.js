@@ -308,7 +308,21 @@ function recordProblemResult(a, b, correct) {
 // ---- Mascot UI -------------------------------------------------------------
 
 function applyAnimalTheme(animal) {
-  document.body.dataset.animal = animal || DEFAULT_MASCOT;
+  // Apply on the root <html> element (not <body>) so the per-animal
+  // `--bg-*` custom properties also cascade to `html`. iOS Safari tints
+  // the notch / home-indicator / area behind the URL bar using the
+  // `<html>` element's background-color, so the theme variables must be
+  // available there for the safe areas to follow the current theme.
+  document.documentElement.dataset.animal = animal || DEFAULT_MASCOT;
+  // Sync the <meta name="theme-color"> with the active theme's start color
+  // so iOS Safari's UI chrome (and Android Chrome's address bar) blend in.
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    const bgStart = getComputedStyle(document.documentElement)
+      .getPropertyValue('--bg-start')
+      .trim();
+    if (bgStart) themeMeta.setAttribute('content', bgStart);
+  }
 }
 
 function updateMascotDisplay() {
