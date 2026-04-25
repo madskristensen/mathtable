@@ -310,19 +310,15 @@ function recordProblemResult(a, b, correct) {
 function applyAnimalTheme(animal) {
   // Apply on the root <html> element (not <body>) so the per-animal
   // `--bg-*` custom properties also cascade to `html`. iOS Safari tints
-  // the notch / home-indicator / area behind the URL bar using the
-  // `<html>` element's background-color, so the theme variables must be
-  // available there for the safe areas to follow the current theme.
+  // the rubber-band over-scroll regions using the `<html>` element's
+  // background-color, so the theme variables must be available there for
+  // those areas to follow the current theme.
+  //
+  // Note: we deliberately do NOT set `<meta name="theme-color">`. Letting
+  // Safari sample its URL/status bar tint from the actual page background
+  // means the chrome blends with the gradient automatically and updates
+  // when the user changes the mascot, without per-theme bookkeeping.
   document.documentElement.dataset.animal = animal || DEFAULT_MASCOT;
-  // Sync the <meta name="theme-color"> with the active theme's start color
-  // so iOS Safari's UI chrome (and Android Chrome's address bar) blend in.
-  const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) {
-    const bgStart = getComputedStyle(document.documentElement)
-      .getPropertyValue('--bg-start')
-      .trim();
-    if (bgStart) themeMeta.setAttribute('content', bgStart);
-  }
 }
 
 function updateMascotDisplay() {
