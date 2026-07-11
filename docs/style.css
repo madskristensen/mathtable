@@ -75,6 +75,13 @@
   --bg-end: #be185d;
 }
 
+/* 🦄 Unicorn — girly pink */
+:root[data-animal='🦄'] {
+  --bg-start: #f9a8d4;
+  --bg-mid: #f472b6;
+  --bg-end: #ec4899;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
