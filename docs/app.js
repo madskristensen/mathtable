@@ -124,7 +124,7 @@ const GAME_REGISTRY = {
   },
 };
 
-const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱'];
+const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱', '🦄'];
 const DEFAULT_MASCOT = ANIMALS[0];
 
 const CARD_ACCENTS = [
