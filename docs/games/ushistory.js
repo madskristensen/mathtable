@@ -1,14 +1,14 @@
 // US History — kid-friendly multiple-choice trivia covering the
 // founding of the United States through modern times. Distractors are
 // drawn from the same era's answer pool so wrong choices stay plausible.
-import { shuffle } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers
 // in the same era pool.
 
 const FOUNDING = [
-  { q: 'Who was the first President of the United States?', a: 'George Washington',
+  { q: 'Who was the first President of the United States?', a: 'George Washington', explanation: 'Washington led the Continental Army before becoming president in 1789.',
     choices: ['George Washington', 'Thomas Jefferson', 'Abraham Lincoln', 'John Adams'] },
   { q: 'In what year did the United States declare independence?', a: '1776',
     choices: ['1776', '1492', '1812', '1620'] },
@@ -28,7 +28,7 @@ const FOUNDING = [
     choices: ['Paul Revere', 'George Washington', 'Patrick Henry', 'John Adams'] },
   { q: 'What is the supreme law of the United States?', a: 'The Constitution',
     choices: ['The Constitution', 'The Mayflower Compact', 'The Declaration', 'The Bill of Rights'] },
-  { q: 'What are the first ten amendments to the Constitution called?', a: 'The Bill of Rights',
+  { q: 'What are the first ten amendments to the Constitution called?', a: 'The Bill of Rights', explanation: 'An amendment is a change or addition to the Constitution. These ten protect important freedoms.',
     choices: ['The Bill of Rights', 'The Articles', 'The Preamble', 'The Ten Commandments'] },
   { q: 'How many original colonies declared independence from Britain?', a: '13',
     choices: ['13', '50', '7', '20'] },
@@ -293,7 +293,13 @@ export const game = {
 
   createQuestion(session) {
     const pool = poolForMode(session?.modeId);
-    const question = pickQuestion(session, pool);
+    const question = session.reviewItem ? poolForMode('all').find((item) => item.q === session.reviewItem.q) : pickQuestion(session, pool);
+    if (!question) throw new Error('This history question is no longer available.');
+    const context = FOUNDING.includes(question) ? 'The founding era tells how the colonies became an independent country and formed a government.'
+      : EXPANSION.includes(question) ? 'As the United States grew, inventions changed daily life. Expansion also displaced Native American communities.'
+      : CIVIL_WAR.includes(question) ? 'The Civil War divided the United States. Slavery and its abolition are central to understanding this era.'
+      : MODERN_US.includes(question) ? 'Modern America has been shaped by new technology and people working for equal rights.'
+      : 'Symbols, landmarks, and holidays help people remember important parts of a country\'s story.';
     return {
       prompt: `
         <div class="history-prompt">
@@ -301,6 +307,7 @@ export const game = {
         </div>`,
       answers: buildAnswers(question, pool),
       correctValue: question.a,
+      ...historyLearning(question, context),
     };
   },
 };

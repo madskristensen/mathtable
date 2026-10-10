@@ -8,8 +8,11 @@ A fast offline-friendly PWA that now acts as a hub for multiple kids learning ga
 
 ## Games
 
-- 🔢 **Multiplication** — includes Quick Game, Practice, Challenge, and Multiplication Map sub-games.
-- 🕒 **Tell Time (Analog Clock)** — read an analog clock and pick the matching digital time.
+- **Math:** Addition, Subtraction, Multiplication, and Division, with practice and mastery maps.
+- **Time:** Tell Time (Analog Clock) and Time Math.
+- **Reading:** Word Reading and Flash Word.
+- **Geography:** Find the State (US) and Find the Country (Europe), with regional practice and map views.
+- **History:** World History, US History, and Mythology.
 
 ## Shared Features
 
@@ -20,6 +23,15 @@ A fast offline-friendly PWA that now acts as a hub for multiple kids learning ga
 - 🐾 Emoji animal picker used across all games
 - 🎨 Shared theme and UI components
 - 📱 Installable PWA with offline support
+- Subject filters, a full game grid, and a continue-playing shortcut
+- Visual explanations for arithmetic and clocks, worked time calculations, and reading/geography/history learning notes
+- Untimed mistakes pause for learning; Practice and review pause after every answer. Timed Challenges keep moving.
+- **Practice my tricky ones** in game menus and results, plus spaced review every fourth untimed question
+- Starter, Growing, and Explorer levels; two completed untimed sessions with at least 10 answers and 80% accuracy recommend the next level
+- **My Skills** views and mastery counts on home cards. Mastery requires at least three correct answers and 80% accuracy over the last five attempts (or all attempts when fewer than five).
+- A Learning Passport with game stamps and improvement badges. Exploring three subjects unlocks a unicorn mascot; lessons are never locked.
+
+All new learning data stays on this device alongside existing scores and streaks. Missed skills stay in the review list until answered correctly three times in a row. Review sessions do not enter high-score tables or advance difficulty recommendations.
 
 ## Tech Stack
 
@@ -36,11 +48,15 @@ docs/
   index.html              App shell
   style.css               Shared styles/theme
   app.js                  Shared hub framework/state
+  learning.js             Mastery, review, difficulty progress, and passport rules
   games/
     multiplication.js     Multiplication game module
     clock.js              Analog clock game module
   sw.js                   Service worker
   manifest.json           PWA manifest
+tests/
+  learning.test.mjs        Dependency-free learning and game-contract tests
+  browser.mjs              Real Edge browser/offline regression checks
 ```
 
 ## Development
@@ -57,6 +73,17 @@ This installs the [LiveReloadServer](https://github.com/RickStrahl/LiveReloadSer
 > The service worker can serve stale cached files. To always see your latest changes,
 > open **Edge / Chrome DevTools → Application → Service Workers** and check
 > **"Update on reload"**. This forces the browser to fetch a fresh service worker on every page load.
+
+### Validation
+
+No build step or package installation is needed. With Node.js 24 or later:
+
+```powershell
+node --test tests\learning.test.mjs
+node tests\browser.mjs
+```
+
+The browser runner uses a temporary profile, a local HTTP server, and installed Microsoft Edge on Windows. Set `BROWSER_PATH` to use a different Chromium executable. It exercises mobile UI, persisted review, cancellation, level choices, rewards, and offline asset loading, then removes its temporary profile.
 
 ## License
 

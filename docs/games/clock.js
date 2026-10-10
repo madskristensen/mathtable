@@ -32,21 +32,15 @@ function makeClockMarkup(hour12, minute) {
   `;
 }
 
-function buildAnswers(hour, minute) {
+function buildAnswers(hour, minute, minutes) {
   const correct = formatTime(hour, minute);
-  const options = new Set([correct]);
-
-  while (options.size < 4) {
-    const minuteShift = MINUTES[randomInt(0, MINUTES.length - 1)];
-    const hourShift = randomInt(1, 12);
-    const useMinuteShift = Math.random() > 0.5;
-
-    const fakeMinute = useMinuteShift ? minuteShift : minute;
-    const fakeHour = useMinuteShift ? hour : hourShift;
-    options.add(formatTime(fakeHour, fakeMinute));
-  }
-
-  return shuffle([...options]).map((value) => ({ value, label: `<span class="answer-main">${value}</span>` }));
+  const candidates = new Set([
+    ...Array.from({ length: 12 }, (_, index) => formatTime(index + 1, minute)),
+    ...minutes.map((value) => formatTime(hour, value)),
+  ]);
+  candidates.delete(correct);
+  const options = [correct, ...shuffle([...candidates]).slice(0, 3)];
+  return shuffle(options).map((value) => ({ value, label: `<span class="answer-main">${value}</span>` }));
 }
 
 export const game = {
@@ -54,6 +48,7 @@ export const game = {
   title: 'Tell Time (Analog Clock)',
   icon: '🕒',
   description: 'Read the analog clock and pick the time.',
+  levels: ['Whole hours', 'Hours and half hours', 'Five-minute intervals'],
   defaultMode: MODE_IDS.QUICK,
   modes: [
     {
@@ -104,13 +99,18 @@ export const game = {
   },
   createQuestion(session) {
     const isPractice = session && session.modeId === MODE_IDS.PRACTICE;
-    const hour = isPractice ? Number(session.hour || 1) : randomInt(1, 12);
-    const minute = MINUTES[randomInt(0, MINUTES.length - 1)];
+    const minutes = session.level === 1 ? [0] : session.level === 2 ? [0, 30] : MINUTES;
+    const hour = session.reviewItem?.hour ?? (isPractice ? Number(session.hour || 1) : randomInt(1, 12));
+    const minute = session.reviewItem?.minute ?? minutes[randomInt(0, minutes.length - 1)];
 
     return {
       prompt: makeClockMarkup(hour, minute),
-      answers: buildAnswers(hour, minute),
+      answers: buildAnswers(hour, minute, minutes),
       correctValue: formatTime(hour, minute),
+      explanation: `<p>The short hand shows the hour: ${hour}. The long hand shows ${minute} minutes.</p>
+        <p>Count by fives around the clock: each number is five minutes. ${minute === 0 ? 'At 12, the minute hand means zero minutes.' : `The long hand points to ${minute / 5}: ${minute / 5} times 5 = ${minute}.`}</p>
+        <div class="clock-teaching">${makeClockMarkup(hour, minute)}</div><p>So the time is <strong>${formatTime(hour, minute)}</strong>.</p>`,
+      learning: { key: formatTime(hour, minute), label: formatTime(hour, minute), data: { hour, minute } },
     };
   },
 };

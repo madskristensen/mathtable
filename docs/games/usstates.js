@@ -1,5 +1,6 @@
 import { MODE_IDS, randomInt, shuffle } from './_shared.js';
 import { STATES, STATE_CODES, REGIONS, codesByRegion } from './data/us-states.js';
+import { isMastered } from '../learning.js';
 
 const SVG_URL = './games/data/us-states.svg?v=1';
 
@@ -39,6 +40,8 @@ function svgWithHighlight(svgRoot, highlightCode) {
 function pickAnswerPool(session) {
   const region = session?.modeConfig?.region;
   if (region && REGIONS[region]) return codesByRegion(region);
+  if (session?.level === 1) return codesByRegion('northeast');
+  if (session?.level === 2) return [...codesByRegion('northeast'), ...codesByRegion('midwest')];
   return STATE_CODES;
 }
 
@@ -79,17 +82,19 @@ function renderHeatMap(svgRoot, stats) {
     const path = clone.getElementById(code);
     if (!path) return;
     path.classList.add('us-map-state');
-    const fact = stats.problems?.[`statex${code}`];
+    const skill = stats.learning?.usstates?.[`state:${code}`];
+    const fact = skill || stats.problems?.[`statex${code}`];
     const total = (fact?.correct || 0) + (fact?.wrong || 0);
     let cls;
     if (total === 0) {
       cls = 'map-new';
       counters.newCount += 1;
     } else {
-      const acc = (fact.correct || 0) / total;
+      const acc = skill && isMastered(skill) ? 1 : Math.min((fact.correct || 0) / total, skill ? 0.89 : 1);
       if (acc < 0.6) { cls = 'map-learning'; counters.learningCount += 1; }
       else if (acc < 0.9) { cls = 'map-good'; counters.goodCount += 1; }
-      else { cls = 'map-mastered'; counters.masteredCount += 1; }
+      else if (!skill || isMastered(skill)) { cls = 'map-mastered'; counters.masteredCount += 1; }
+      else { cls = 'map-good'; counters.goodCount += 1; }
     }
     path.classList.add(cls);
     path.setAttribute('fill', '');
@@ -114,6 +119,7 @@ export const game = {
   title: 'Find the State',
   icon: '🗺️',
   description: 'A US state is highlighted — pick its name!',
+  levels: ['Northeast (or your chosen practice region)', 'Northeast and Midwest', 'All 50 states'],
   defaultMode: MODE_IDS.QUICK,
   modes: [
     {
@@ -172,7 +178,7 @@ export const game = {
   async createQuestion(session) {
     const svgRoot = await loadSvgRoot();
     const pool = pickAnswerPool(session);
-    const correctCode = pool[randomInt(0, pool.length - 1)];
+    const correctCode = session.reviewItem?.code || pool[randomInt(0, pool.length - 1)];
     const stateName = STATES[correctCode].name;
     const isCapitals = session?.modeId === MODE_IDS.CAPITALS;
 
@@ -185,6 +191,9 @@ export const game = {
         answers: buildAnswers(correctCode, pool, MODE_IDS.CAPITALS),
         answerClass: 'answer-btn--state',
         correctValue: STATES[correctCode].capital,
+        explanation: `<p><strong>${STATES[correctCode].capital}</strong> is the capital of ${stateName}.</p>
+          <p>${stateName} is in the ${REGIONS[STATES[correctCode].region].label}. A capital is where the state government works.</p>`,
+        learning: { key: `capital:${correctCode}`, label: `${stateName}: capital`, data: { code: correctCode } },
         // Stored as key "capx${CODE}" by recordProblemResult.
         meta: { fact: { a: 'cap', b: correctCode } },
       };
@@ -198,6 +207,9 @@ export const game = {
       answers: buildAnswers(correctCode, pool),
       answerClass: 'answer-btn--state',
       correctValue: correctCode,
+      explanation: `<p>The highlighted state is <strong>${stateName}</strong>, in the ${REGIONS[STATES[correctCode].region].label}.</p>
+        <p>Its capital is ${STATES[correctCode].capital}. Look at its shape and position on the map before trying again.</p>`,
+      learning: { key: `state:${correctCode}`, label: stateName, data: { code: correctCode } },
       // Stored as key "statex${CODE}" by recordProblemResult — drives the heat map.
       meta: { fact: { a: 'state', b: correctCode }, stateName },
     };

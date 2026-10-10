@@ -95,6 +95,7 @@ export const game = {
   title: 'Word Reading',
   icon: '🔤',
   description: 'Read the word and pick the matching picture!',
+  levels: ['Short words (up to four letters)', 'Words up to six letters', 'All words'],
   defaultMode: 'quick',
 
   modes: [
@@ -133,8 +134,10 @@ export const game = {
   },
 
   createQuestion(session) {
-    const pool = wordsForMode(session.modeId);
-    const entry = pickWord(session, pool);
+    const maxLength = session.level === 1 ? 4 : session.level === 2 ? 6 : Infinity;
+    const pool = wordsForMode(session.modeId).filter((entry) => entry.word.length <= maxLength);
+    const entry = session.reviewItem ? WORDS.find((word) => word.word === session.reviewItem.word) : pickWord(session, pool);
+    if (!entry) throw new Error('This word is no longer available.');
     const answers = buildAnswers(entry);
 
     return {
@@ -146,6 +149,9 @@ export const game = {
       answers,
       answerClass: 'answer-btn--emoji',
       correctValue: entry.emoji,
+      explanation: `<p><strong>${entry.word}</strong> matches ${entry.emoji}.</p>
+        <p>Look at each letter: ${entry.word.split('').join(' · ')}. Then read the whole word: ${entry.word.toLowerCase()}.</p>`,
+      learning: { key: entry.word, label: entry.word, data: { word: entry.word } },
     };
   },
 };

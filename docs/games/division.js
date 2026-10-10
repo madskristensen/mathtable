@@ -11,9 +11,9 @@ export const game = createArithmeticGame({
     options: Array.from({ length: 12 }, (_, i) => i + 1),
     defaultValue: 2,
   },
-  pickPair: ({ isPractice, table }) => {
-    const divisor = isPractice ? table : randomInt(1, 12);
-    const quotient = randomInt(1, 12);
+  pickPair: ({ isPractice, table, limit }) => {
+    const divisor = isPractice ? table : randomInt(1, limit);
+    const quotient = randomInt(1, limit);
     return { a: divisor * quotient, b: divisor };
   },
   compute: (dividend, divisor) => dividend / divisor,

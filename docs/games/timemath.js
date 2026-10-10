@@ -80,10 +80,10 @@ function formatDuration(duration) {
   return `${duration} min`;
 }
 
-function createShiftQuestion(direction) {
+function createShiftQuestion(direction, session) {
   const isAdd = direction === 'add';
-  const startMin = randomStartMinutes();
-  const duration = randomItem(SHIFT_DURATIONS);
+  const startMin = session.reviewItem?.startMin ?? gradedStart(session.level);
+  const duration = session.reviewItem?.duration ?? randomItem(gradedDurations(session.level, SHIFT_DURATIONS));
   const resultMin = isAdd ? startMin + duration : startMin - duration;
   const startStr = minutesToTimeString(startMin);
   const resultStr = minutesToTimeString(resultMin);
@@ -97,12 +97,16 @@ function createShiftQuestion(direction) {
     `,
     answers: buildTimeAnswers(resultMin, resultStr),
     correctValue: resultStr,
+    explanation: `<p>${isAdd ? 'Move forward' : 'Move backward'} ${duration} minutes from ${startStr}.</p>
+      <p>One hour is 60 minutes. ${duration >= 60 ? `First move ${Math.floor(duration / 60)} hour(s), then ${duration % 60} more minutes.` : 'When you pass an hour mark, keep counting into the next hour.'}</p>
+      <p>${timeSteps(startMin, duration, isAdd ? 1 : -1)}</p><p>The time is <strong>${resultStr}</strong>.</p>`,
+    learning: { key: `${direction}:${startMin % 60}:${duration}`, label: `${startStr} ${isAdd ? '+' : '-'} ${duration} min`, data: { operation: direction, startMin, duration } },
   };
 }
 
-function createElapsedQuestion() {
-  const startMin = randomStartMinutes();
-  const duration = randomItem(ELAPSED_DURATIONS);
+function createElapsedQuestion(session) {
+  const startMin = session.reviewItem?.startMin ?? gradedStart(session.level);
+  const duration = session.reviewItem?.duration ?? randomItem(gradedDurations(session.level, ELAPSED_DURATIONS));
   const endMin = startMin + duration;
   const startStr = minutesToTimeString(startMin);
   const endStr = minutesToTimeString(endMin);
@@ -114,13 +118,39 @@ function createElapsedQuestion() {
     `,
     answers: buildElapsedAnswers(duration),
     correctValue: String(duration),
+    explanation: `<p>Count forward from ${startStr} to ${endStr}. Each full hour is 60 minutes.</p>
+      <p>${timeSteps(startMin, duration, 1)}</p><p>Altogether, <strong>${duration} minutes</strong> have passed.</p>`,
+    learning: { key: `elapsed:${startMin % 60}:${duration}`, label: `${startStr} to ${endStr}`, data: { operation: 'elapsed', startMin, duration } },
   };
 }
 
-function createQuestionForOperation(operation) {
-  if (operation === 'subtract') return createShiftQuestion('subtract');
-  if (operation === 'elapsed') return createElapsedQuestion();
-  return createShiftQuestion('add');
+function createQuestionForOperation(operation, session) {
+  if (operation === 'subtract') return createShiftQuestion('subtract', session);
+  if (operation === 'elapsed') return createElapsedQuestion(session);
+  return createShiftQuestion('add', session);
+}
+
+function gradedStart(level) {
+  const start = randomStartMinutes();
+  const step = level === 1 ? 60 : level === 2 ? 30 : 5;
+  return Math.floor(start / step) * step;
+}
+
+function gradedDurations(level, fullPool) {
+  return level === 1 ? [15, 30, 60] : level === 2 ? [15, 30, 45, 60] : fullPool;
+}
+
+function timeSteps(start, duration, direction) {
+  const steps = [minutesToTimeString(start)];
+  let remaining = duration;
+  let current = start;
+  while (remaining > 0) {
+    const step = Math.min(remaining, 30);
+    current += step * direction;
+    steps.push(`${direction === 1 ? '+' : '-'}${step} min = ${minutesToTimeString(current)}`);
+    remaining -= step;
+  }
+  return steps.join(' → ');
 }
 
 function pickRandomOperation() {
@@ -132,6 +162,7 @@ export const game = {
   title: 'Time Math',
   icon: '⏱️',
   description: 'Add and subtract time. What is 6:45 AM + 20 minutes?',
+  levels: ['Start on whole hours; add or subtract 15, 30, or 60 minutes', 'Start on half hours; work with quarter hours', 'Five-minute starts and longer durations'],
   defaultMode: MODE_IDS.QUICK,
   modes: [
     {
@@ -182,7 +213,7 @@ export const game = {
   },
   createQuestion(session) {
     const isPractice = session && session.modeId === MODE_IDS.PRACTICE;
-    const operation = isPractice ? (session.operation || 'add') : pickRandomOperation();
-    return createQuestionForOperation(operation);
+    const operation = session.reviewItem?.operation || (isPractice ? (session.operation || 'add') : pickRandomOperation());
+    return createQuestionForOperation(operation, session);
   },
 };

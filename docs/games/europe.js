@@ -1,5 +1,6 @@
 import { MODE_IDS, randomInt, shuffle } from './_shared.js';
 import { COUNTRIES, COUNTRY_CODES, REGIONS, codesByRegion } from './data/europe.js';
+import { isMastered } from '../learning.js';
 
 const SVG_URL = './games/data/europe.svg?v=1';
 // Cropped viewBox: keep the frame tight on western/central/southern Europe.
@@ -55,6 +56,8 @@ function svgWithHighlight(svgRoot, highlightCode) {
 function pickAnswerPool(session) {
   const region = session?.modeConfig?.region;
   if (region && REGIONS[region]) return codesByRegion(region);
+  if (session?.level === 1) return codesByRegion('western');
+  if (session?.level === 2) return [...codesByRegion('western'), ...codesByRegion('northern')];
   return COUNTRY_CODES;
 }
 
@@ -95,17 +98,19 @@ function renderHeatMap(svgRoot, stats) {
     const path = clone.getElementById(code);
     if (!path) return;
     path.classList.add('us-map-state');
-    const fact = stats.problems?.[`euctryx${code}`];
+    const skill = stats.learning?.europe?.[`country:${code}`];
+    const fact = skill || stats.problems?.[`euctryx${code}`];
     const total = (fact?.correct || 0) + (fact?.wrong || 0);
     let cls;
     if (total === 0) {
       cls = 'map-new';
       counters.newCount += 1;
     } else {
-      const acc = (fact.correct || 0) / total;
+      const acc = skill && isMastered(skill) ? 1 : Math.min((fact.correct || 0) / total, skill ? 0.89 : 1);
       if (acc < 0.6) { cls = 'map-learning'; counters.learningCount += 1; }
       else if (acc < 0.9) { cls = 'map-good'; counters.goodCount += 1; }
-      else { cls = 'map-mastered'; counters.masteredCount += 1; }
+      else if (!skill || isMastered(skill)) { cls = 'map-mastered'; counters.masteredCount += 1; }
+      else { cls = 'map-good'; counters.goodCount += 1; }
     }
     path.classList.add(cls);
     path.setAttribute('fill', '');
@@ -130,6 +135,7 @@ export const game = {
   title: 'Find the Country',
   icon: '🇪🇺',
   description: 'A European country is highlighted — pick its name!',
+  levels: ['Western Europe (or your chosen practice region)', 'Western and Northern Europe', 'All European countries'],
   defaultMode: MODE_IDS.QUICK,
   modes: [
     {
@@ -182,7 +188,7 @@ export const game = {
   async createQuestion(session) {
     const svgRoot = await loadSvgRoot();
     const pool = pickAnswerPool(session);
-    const correctCode = pool[randomInt(0, pool.length - 1)];
+    const correctCode = session.reviewItem?.code || pool[randomInt(0, pool.length - 1)];
     const countryName = COUNTRIES[correctCode].name;
     const isCapitals = session?.modeId === MODE_IDS.CAPITALS;
 
@@ -195,6 +201,9 @@ export const game = {
         answers: buildAnswers(correctCode, pool, MODE_IDS.CAPITALS),
         answerClass: 'answer-btn--state',
         correctValue: COUNTRIES[correctCode].capital,
+        explanation: `<p><strong>${COUNTRIES[correctCode].capital}</strong> is the capital of ${countryName}.</p>
+          <p>${countryName} is in ${REGIONS[COUNTRIES[correctCode].region].label}. A capital is where a country's government is based.</p>`,
+        learning: { key: `capital:${correctCode}`, label: `${countryName}: capital`, data: { code: correctCode } },
         // Stored as key "eucapx${CODE}" by recordProblemResult.
         meta: { fact: { a: 'eucap', b: correctCode } },
       };
@@ -208,6 +217,9 @@ export const game = {
       answers: buildAnswers(correctCode, pool),
       answerClass: 'answer-btn--state',
       correctValue: correctCode,
+      explanation: `<p>The highlighted country is <strong>${countryName}</strong>, in ${REGIONS[COUNTRIES[correctCode].region].label}.</p>
+        <p>Its capital is ${COUNTRIES[correctCode].capital}. Look at its shape and position on the map before trying again.</p>`,
+      learning: { key: `country:${correctCode}`, label: countryName, data: { code: correctCode } },
       // Stored as key "euctryx${CODE}" by recordProblemResult — drives the heat map.
       meta: { fact: { a: 'euctry', b: correctCode }, countryName },
     };

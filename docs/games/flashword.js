@@ -139,8 +139,13 @@ function exposureForStreak(streak) {
 // frame so the DOM is in place when the timer fires.
 
 let pendingHideId = null;
+let pendingFrameId = null;
 
 function cancelPendingHide() {
+  if (pendingFrameId !== null) {
+    cancelAnimationFrame(pendingFrameId);
+    pendingFrameId = null;
+  }
   if (pendingHideId !== null) {
     clearTimeout(pendingHideId);
     pendingHideId = null;
@@ -149,7 +154,8 @@ function cancelPendingHide() {
 
 function scheduleFlash(exposureMs) {
   cancelPendingHide();
-  requestAnimationFrame(() => {
+  pendingFrameId = requestAnimationFrame(() => {
+    pendingFrameId = null;
     const el = document.querySelector('.flash-word');
     const buttons = document.querySelectorAll('#answers .answer-btn');
 
@@ -158,12 +164,11 @@ function scheduleFlash(exposureMs) {
 
     pendingHideId = setTimeout(() => {
       pendingHideId = null;
-      const word = document.querySelector('.flash-word');
-      if (word) {
-        word.textContent = '•••';
-        word.classList.add('flash-word--hidden');
+      if (el?.isConnected) {
+        el.textContent = '•••';
+        el.classList.add('flash-word--hidden');
       }
-      document.querySelectorAll('#answers .answer-btn').forEach((btn) => {
+      buttons.forEach((btn) => {
         btn.disabled = false;
       });
     }, exposureMs);
@@ -177,6 +182,7 @@ export const game = {
   title: 'Flash Word',
   icon: '⚡',
   description: 'A word flashes for a moment — pick which one you saw!',
+  levels: ['A gentle 1.2-second look', 'At least 0.6 seconds to look', 'Faster flashes as your streak grows'],
   defaultMode: 'sight',
 
   modes: [
@@ -215,17 +221,20 @@ export const game = {
   },
 
   createQuestion(session) {
-    const exposureMs = exposureForStreak(session?.streak || 0);
+    const adaptiveExposure = exposureForStreak(session?.streak || 0);
+    const exposureMs = session.level === 1 ? 1200 : session.level === 2 ? Math.max(600, adaptiveExposure) : adaptiveExposure;
 
     let target;
     let distractors;
     if (session?.modeId === 'tricky') {
-      const group = randomItem(TRICKY_GROUPS);
-      target = randomItem(group);
+      const group = session.reviewItem ? TRICKY_GROUPS.find((words) => words.includes(session.reviewItem.target)) : randomItem(TRICKY_GROUPS);
+      if (!group) throw new Error('This word group is no longer available.');
+      target = session.reviewItem?.target || randomItem(group);
       distractors = pickFromGroup(target, group, 3);
     } else {
       const bank = bankForMode(session?.modeId);
-      target = randomItem(bank);
+      target = session.reviewItem?.target || randomItem(bank);
+      if (!bank.includes(target)) throw new Error('This flash word is no longer available.');
       distractors = pickDistractors(target, bank, 3);
     }
 
@@ -233,8 +242,6 @@ export const game = {
       value: w,
       label: `<span class="flash-answer">${w}</span>`,
     }));
-
-    scheduleFlash(exposureMs);
 
     return {
       prompt: `
@@ -244,6 +251,11 @@ export const game = {
         </div>`,
       answers,
       correctValue: target,
+      explanation: `<p>The word was <strong>${target}</strong>.</p><p>Look carefully at the letters: ${target.split('').join(' · ')}.
+        Compare the middle and ending letters with the other choices.</p>`,
+      learning: { key: target, label: target, data: { target } },
+      onRender: () => scheduleFlash(exposureMs),
+      onLeave: cancelPendingHide,
     };
   },
 };

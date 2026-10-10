@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
   <div id="app">
@@ -33,6 +33,13 @@
         </div>
 
         <button class="mascot-btn" id="mascot-btn" aria-label="Change animal"></button>
+
+        <div class="home-tools">
+          <button class="learning-btn" id="continue-btn" hidden>Continue playing</button>
+          <button class="learning-btn" id="all-games-btn" aria-pressed="false">See all games</button>
+          <button class="learning-btn" id="passport-btn">Learning Passport</button>
+        </div>
+        <div class="category-filters" id="category-filters" role="group" aria-label="Filter games by subject"></div>
 
         <div class="carousel-wrapper">
           <div class="games-carousel" id="games-grid"></div>
@@ -66,6 +73,10 @@
         <div class="mascot" id="mode-menu-mascot"></div>
         <h2 id="mode-game-title">Game Modes</h2>
         <p class="mode-subtitle">Pick how you want to play</p>
+        <label class="level-picker" for="level-select">Learning level
+          <select id="level-select"></select>
+          <span id="level-description"></span>
+        </label>
         <div class="mode-list" id="mode-list"></div>
       </div>
     </div>
@@ -103,8 +114,10 @@
       <div class="game-body">
           <div class="mascot" id="mascot"></div>
           <div class="prompt" id="prompt"></div>
-          <div class="feedback" id="feedback"></div>
+          <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
           <div class="answers" id="answers"></div>
+          <div class="answer-explanation" id="answer-explanation" hidden></div>
+          <button class="learning-btn" id="next-question-btn" hidden>Next</button>
         </div>
     </div>
 
@@ -132,7 +145,11 @@
 
         <div class="new-high-score" id="new-high-score" style="display:none">🎉 NEW HIGH SCORE! 🎉</div>
 
+        <div class="learning-results" id="learning-results" aria-live="polite"></div>
         <div class="results-buttons">
+          <button class="btn btn-practice" id="btn-review" hidden>
+            <span class="btn-label">Practice my tricky ones</span>
+          </button>
           <button class="btn btn-play" id="btn-play-again">
             <span class="btn-icon">▶️</span>
             <span class="btn-label">Play Again</span>
@@ -142,6 +159,15 @@
             <span class="btn-label">Home</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <div id="screen-passport" class="screen">
+      <div class="mode-content">
+        <button class="back-btn" id="passport-back-btn" aria-label="Back to home">←</button>
+        <h2>Learning Passport</h2>
+        <p class="mode-subtitle">Explore, improve, and collect stamps. No perfect scores needed!</p>
+        <div class="passport-body" id="passport-body"></div>
       </div>
     </div>
 
@@ -155,6 +181,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=20"></script>
+  <script type="module" src="app.js?v=21"></script>
 </body>
 </html>

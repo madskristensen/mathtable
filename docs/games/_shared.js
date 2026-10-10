@@ -1,4 +1,5 @@
 // Shared helpers and factories used by individual game modules.
+import { escapeHtml, isMastered } from '../learning.js';
 
 export const MODE_IDS = {
   QUICK: 'quick',
@@ -47,12 +48,14 @@ export function pad2(n) {
 //
 // The factory then exposes the standard `game` object that the hub expects.
 
-function getFactAccuracy(stats, key) {
-  const fact = stats.problems?.[key];
+function getFactAccuracy(stats, key, gameId) {
+  const skill = stats.learning?.[gameId]?.[key];
+  const fact = skill || stats.problems?.[key];
   if (!fact) return -1;
+  if (skill && isMastered(skill)) return 1;
   const total = (fact.correct || 0) + (fact.wrong || 0);
   if (total === 0) return -1;
-  return (fact.correct || 0) / total;
+  return Math.min((fact.correct || 0) / total, skill ? 0.89 : 1);
 }
 
 function classifyAccuracy(acc, counters) {
@@ -72,7 +75,7 @@ function classifyAccuracy(acc, counters) {
   return { cls: 'map-mastered', label: '✓' };
 }
 
-function renderArithmeticMap(stats, mapConfig) {
+function renderArithmeticMap(stats, mapConfig, gameId) {
   const {
     symbol,
     mapKeySep = symbol,
@@ -96,7 +99,7 @@ function renderArithmeticMap(stats, mapConfig) {
         rows.push('<div class="map-cell map-na"></div>');
         continue;
       }
-      const acc = getFactAccuracy(stats, mapKey(a, b));
+      const acc = getFactAccuracy(stats, mapKey(a, b), gameId);
       const { cls, label } = classifyAccuracy(acc, counters);
       const title = cellTitle ? cellTitle(a, b) : `${a}${symbol}${b}`;
       rows.push(`<div class="map-cell ${cls}" title="${title}">${label}</div>`);
@@ -133,6 +136,7 @@ export function createArithmeticGame(config) {
     title,
     icon,
     description,
+    levels: ['Numbers up to 5 (your chosen practice number is kept)', 'Numbers up to 10', `Numbers up to ${map.dim}`],
     defaultMode: MODE_IDS.QUICK,
     modes: [
       {
@@ -183,8 +187,27 @@ export function createArithmeticGame(config) {
     },
     createQuestion(session) {
       const isPractice = session?.modeId === MODE_IDS.PRACTICE;
-      const { a, b } = pickPair({ isPractice, table: Number(session?.table) || practice.defaultValue });
+      const limit = [5, 10, map.dim][(session?.level || 1) - 1];
+      const { a, b } = session.reviewItem || pickPair({ isPractice, table: Number(session?.table) || practice.defaultValue, limit });
+      if (!Number.isInteger(a) || !Number.isInteger(b) || a < 1 || b < 1 || a > 144 || b > 20) {
+        throw new Error('This arithmetic fact is not valid.');
+      }
       const correct = compute(a, b);
+      const key = `${a}${id === 'multiplication' ? 'x' : id === 'subtraction' ? '-' : symbol}${b}`;
+      const dots = (count) => '<span class="learning-dot" aria-hidden="true"></span>'.repeat(count);
+      let explanation;
+      if (id === 'addition') {
+        explanation = `<p>Start with ${a}, then count ${b} more. ${a} + ${b} = ${correct}.</p>
+          <div class="dot-groups"><div aria-label="${a} dots">${dots(a)}</div><b>+</b><div aria-label="${b} dots">${dots(b)}</div></div>`;
+      } else if (id === 'subtraction') {
+        explanation = `<p>Start with ${a}. Take away ${b}. ${correct} remain.</p>
+          <div class="dot-groups"><div aria-label="${correct} remaining dots">${dots(correct)}</div><div class="removed-dots" aria-label="${b} dots taken away">${dots(b)}</div></div>`;
+      } else {
+        const groups = id === 'division' ? b : a;
+        const perGroup = id === 'division' ? correct : b;
+        explanation = `<p>${id === 'division' ? `Share ${a} equally among ${b} groups. Each group gets ${correct}.` : `${a} groups of ${b} make ${correct}.`}</p>
+          <div class="dot-groups">${Array.from({ length: groups }, () => `<div aria-label="${perGroup} dots">${dots(perGroup)}</div>`).join('')}</div>`;
+      }
       return {
         prompt: `
         <div class="question-title">What is this?</div>
@@ -192,12 +215,23 @@ export function createArithmeticGame(config) {
       `,
         useNumpad: true,
         correctValue: correct,
-        meta: { fact: factMeta(a, b) },
+        explanation,
+        learning: { key, label: `${a} ${symbol} ${b} = ${correct}`, data: { a, b } },
+        meta: { fact: { ...factMeta(a, b), key } },
       };
     },
     renderModeView(modeId, context) {
       if (modeId !== MODE_IDS.MAP) return '<p class="mode-view-empty">Mode not available.</p>';
-      return renderArithmeticMap(context.stats || {}, map);
+      return renderArithmeticMap(context.stats || {}, map, id);
     },
+  };
+}
+
+export function historyLearning(question, context) {
+  return {
+    explanation: `<p>${escapeHtml(question.q)}</p><p><strong>${escapeHtml(question.a)}</strong></p>
+      <p>${escapeHtml(question.explanation || context)}</p>
+      <p>Say the question and answer together, then try remembering the answer without looking.</p>`,
+    learning: { key: question.q, label: question.q, data: { q: question.q } },
   };
 }

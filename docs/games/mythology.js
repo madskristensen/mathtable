@@ -2,14 +2,14 @@
 // and famous stories from Norse, Greek, Roman, and Egyptian mythology.
 // Distractors are drawn from the same pantheon's answer pool so wrong
 // choices stay plausible.
-import { shuffle } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers
 // in the same pantheon pool.
 
 const NORSE = [
-  { q: 'Who is the Norse god of thunder with a mighty hammer?', a: 'Thor' },
+  { q: 'Who is the Norse god of thunder with a mighty hammer?', a: 'Thor', explanation: 'In Norse stories, Thor protects the gods and humans using his hammer, Mjolnir.' },
   { q: 'What is the name of Thor\u2019s hammer?', a: 'Mjolnir',
     choices: ['Mjolnir', 'Gungnir', 'Excalibur', 'Stormbreaker'] },
   { q: 'Who is the chief of the Norse gods, ruler of Asgard?', a: 'Odin' },
@@ -59,7 +59,7 @@ const NORSE = [
 
 const GREEK = [
   { q: 'Who is the king of the Greek gods?', a: 'Zeus' },
-  { q: 'Who is the Greek god of the sea?', a: 'Poseidon' },
+  { q: 'Who is the Greek god of the sea?', a: 'Poseidon', explanation: 'In Greek stories, Poseidon carries a three-pronged spear called a trident.' },
   { q: 'Who is the Greek god of the underworld?', a: 'Hades' },
   { q: 'Which goddess of wisdom was born from Zeus\u2019s head?', a: 'Athena' },
   { q: 'Who is the Greek goddess of love and beauty?', a: 'Aphrodite' },
@@ -276,7 +276,12 @@ export const game = {
 
   createQuestion(session) {
     const pool = poolForMode(session?.modeId);
-    const question = pickQuestion(session, pool);
+    const question = session.reviewItem ? poolForMode('all').find((item) => item.q === session.reviewItem.q) : pickQuestion(session, pool);
+    if (!question) throw new Error('This mythology question is no longer available.');
+    const context = NORSE.includes(question) ? 'Norse myths are traditional stories from northern Europe about gods, heroes, and the natural world.'
+      : GREEK.includes(question) ? 'Greek myths are traditional stories about gods and heroes. Many stories take place around Mount Olympus.'
+      : ROMAN.includes(question) ? 'Roman myths share many characters and ideas with Greek myths, often with different names.'
+      : 'Egyptian myths connected gods and stories to the Nile, the sun, and the cycle of life.';
     return {
       prompt: `
         <div class="history-prompt">
@@ -284,6 +289,7 @@ export const game = {
         </div>`,
       answers: buildAnswers(question, pool),
       correctValue: question.a,
+      ...historyLearning(question, context),
     };
   },
 };

@@ -1,3 +1,6 @@
+import { LEVELS, BADGES, escapeHtml, isMastered, gameSkills, reviewSkills, masterySummary,
+  recordLearning, recommendedLevel, completeLearningSession } from './learning.js';
+
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const DEFAULT_ROUNDS = 10;
 const MAX_HIGH_SCORES = 10;
@@ -126,6 +129,7 @@ const GAME_REGISTRY = {
 
 const ANIMALS = ['🦊', '🐺', '🐯', '🐶', '🐱', '🦄'];
 const DEFAULT_MASCOT = ANIMALS[0];
+const REWARD_MASCOT = '\uD83E\uDD84';
 
 const CARD_ACCENTS = [
   '#e8540a', // orange-red
@@ -151,6 +155,11 @@ const state = {
   mascotSurpriseTimeout: null,
   isHandlingPopState: false,
   currentRoute: HOME_ROUTE,
+  categoryFilter: 'all',
+  gridView: false,
+  answerTimeout: null,
+  selectedLevel: 1,
+  carouselCleanup: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -213,6 +222,10 @@ function defaultStats() {
     mascot: DEFAULT_MASCOT,
     highScores: {},
     problems: {},
+    learning: {},
+    levels: {},
+    lastGame: null,
+    passport: { games: [], categories: [], badges: [], improved: false },
   };
 }
 
@@ -221,21 +234,45 @@ function loadStats() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultStats();
     const parsed = JSON.parse(raw);
-    const mascot = ANIMALS.includes(parsed.mascot) ? parsed.mascot : DEFAULT_MASCOT;
+    const unlocked = parsed.passport?.badges?.includes('curious-explorer');
+    const mascot = ANIMALS.includes(parsed.mascot) || (unlocked && parsed.mascot === REWARD_MASCOT)
+      ? parsed.mascot : DEFAULT_MASCOT;
     return {
       ...defaultStats(),
       ...parsed,
       mascot,
       highScores: parsed.highScores || {},
       problems: parsed.problems || {},
+      learning: parsed.learning || {},
+      levels: parsed.levels || {},
+      passport: { ...defaultStats().passport, ...parsed.passport },
     };
-  } catch {
-    return defaultStats();
+  } catch (error) {
+    reportStorageError('Your progress could not be read. Saved data has not been changed.', error);
+    throw error;
   }
 }
 
 function saveStats(stats) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  } catch (error) {
+    reportStorageError('Your progress could not be saved. Check that browser storage is available.', error);
+    throw error;
+  }
+}
+
+function reportStorageError(message, error) {
+  console.error(message, error);
+  let notice = $('storage-notice');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'storage-notice';
+    notice.className = 'update-banner';
+    notice.setAttribute('role', 'alert');
+    document.body.appendChild(notice);
+  }
+  notice.textContent = message;
 }
 
 function daysBetween(fromIso, toIso) {
@@ -263,8 +300,7 @@ function getVisibleDailyStreak(stats) {
 }
 
 function getMascot() {
-  const mascot = loadStats().mascot;
-  return ANIMALS.includes(mascot) ? mascot : DEFAULT_MASCOT;
+  return loadStats().mascot;
 }
 
 function legacyHighScoreKeys(highScores, gameId) {
@@ -301,9 +337,9 @@ function saveHighScore(gameId, score, correct, total) {
   return stats.highScores[gameId][0]?.score === score;
 }
 
-function recordProblemResult(a, b, correct) {
+function recordProblemResult(fact, correct) {
   const stats = loadStats();
-  const key = `${a}x${b}`;
+  const key = fact.key || `${fact.a}x${fact.b}`;
   const entry = stats.problems[key] || (stats.problems[key] = { correct: 0, wrong: 0 });
   entry[correct ? 'correct' : 'wrong'] += 1;
   saveStats(stats);
@@ -407,7 +443,8 @@ function renderAnimalPicker() {
   const root = $('animal-options');
   root.innerHTML = '';
 
-  ANIMALS.forEach((animal) => {
+  const animals = stats.passport.badges.includes('curious-explorer') ? [...ANIMALS, REWARD_MASCOT] : ANIMALS;
+  animals.forEach((animal) => {
     const btn = document.createElement('button');
     btn.className = `animal-btn ${stats.mascot === animal ? 'active' : ''}`;
     btn.textContent = animal;
@@ -569,10 +606,15 @@ function progressStarsHtml(gameId) {
 function renderGameCards() {
   const carousel = $('games-grid');
   const dotsContainer = $('carousel-dots');
+  if (state.carouselCleanup) state.carouselCleanup();
+  carousel.classList.toggle('games-grid-view', state.gridView);
+  dotsContainer.hidden = state.gridView;
   carousel.innerHTML = '';
   dotsContainer.innerHTML = '';
 
-  const gameIds = Object.keys(GAME_REGISTRY);
+  const stats = loadStats();
+  const gameIds = Object.keys(GAME_REGISTRY).filter((id) => state.categoryFilter === 'all'
+    || GAME_REGISTRY[id].category === state.categoryFilter);
   let currentGroupRow = null;
   let lastCategory = null;
   gameIds.forEach((gameId, index) => {
@@ -607,9 +649,14 @@ function renderGameCards() {
       icon: game.icon,
       title: game.title,
       desc: game.description,
-      scoreLabel: progressStarsHtml(gameId),
+      scoreLabel: `${masterySummary(stats, gameId).mastered} skills mastered`,
       onClick: () => startGame(gameId),
     });
+    const mastery = masterySummary(stats, gameId);
+    const detail = document.createElement('span');
+    detail.className = 'game-card-progress';
+    detail.textContent = `${mastery.practiced} practiced · ${highScoreLabel(gameId)}`;
+    card.appendChild(detail);
     currentGroupRow.appendChild(card);
 
     const dot = document.createElement('button');
@@ -654,33 +701,83 @@ function renderGameCards() {
   };
 
   let scrollFrame = 0;
-  carousel.addEventListener('scroll', () => {
+  const onScroll = () => {
     if (scrollFrame) return;
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = 0;
       updateActiveDot();
     });
-  }, { passive: true });
+  };
+  carousel.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', updateActiveDot);
   // Initial sync once layout has settled.
   requestAnimationFrame(updateActiveDot);
 
   // Mouse drag to scroll the carousel on desktop.
   let isDown = false, startX = 0, scrollLeft = 0;
-  carousel.addEventListener('mousedown', (e) => {
+  const onMouseDown = (e) => {
+    if (state.gridView) return;
     isDown = true;
     carousel.style.cursor = 'grabbing';
     startX = e.pageX - carousel.offsetLeft;
     scrollLeft = carousel.scrollLeft;
-  });
+  };
+  carousel.addEventListener('mousedown', onMouseDown);
   const stopDrag = () => { isDown = false; carousel.style.cursor = ''; };
   carousel.addEventListener('mouseleave', stopDrag);
   carousel.addEventListener('mouseup', stopDrag);
-  carousel.addEventListener('mousemove', (e) => {
+  const onMouseMove = (e) => {
     if (!isDown) return;
     e.preventDefault();
     carousel.scrollLeft = scrollLeft - ((e.pageX - carousel.offsetLeft) - startX);
+  };
+  carousel.addEventListener('mousemove', onMouseMove);
+  state.carouselCleanup = () => {
+    cancelAnimationFrame(scrollFrame);
+    carousel.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', updateActiveDot);
+    carousel.removeEventListener('mousedown', onMouseDown);
+    carousel.removeEventListener('mouseleave', stopDrag);
+    carousel.removeEventListener('mouseup', stopDrag);
+    carousel.removeEventListener('mousemove', onMouseMove);
+  };
+}
+
+function renderHomeTools() {
+  const root = $('category-filters');
+  root.innerHTML = '';
+  Object.entries({ all: { label: 'All subjects' }, ...CATEGORIES }).forEach(([id, category]) => {
+    const button = document.createElement('button');
+    button.className = 'learning-btn';
+    button.textContent = category.label;
+    button.setAttribute('aria-pressed', String(state.categoryFilter === id));
+    button.addEventListener('click', () => {
+      state.categoryFilter = id;
+      renderHomeTools();
+      renderGameCards();
+      $('games-grid').scrollLeft = 0;
+    });
+    root.appendChild(button);
   });
+  const last = loadStats().lastGame;
+  $('continue-btn').hidden = !last || !GAME_REGISTRY[last.gameId];
+  if (last && GAME_REGISTRY[last.gameId]) $('continue-btn').textContent = `Continue ${GAME_REGISTRY[last.gameId].title}`;
+}
+
+function showPassport(options = {}) {
+  stopActiveSession();
+  const stats = loadStats();
+  const stamps = Object.entries(GAME_REGISTRY).map(([id, game]) => {
+    const earned = stats.passport.games.includes(id);
+    return `<div class="passport-stamp ${earned ? 'earned' : ''}"><span>${game.icon}</span>
+      <strong>${escapeHtml(game.title)}</strong><small>${earned ? 'Explored!' : 'Finish a game to earn this stamp'}</small></div>`;
+  }).join('');
+  const badges = BADGES.map((badge) => `<div class="passport-stamp ${stats.passport.badges.includes(badge.id) ? 'earned' : ''}">
+    <span>${badge.icon}</span><strong>${badge.title}</strong><small>${badge.description}</small>
+    <small>${stats.passport.badges.includes(badge.id) ? 'Earned!' : 'Not earned yet'}</small></div>`).join('');
+  $('passport-body').innerHTML = `<h3>Adventure stamps</h3><div class="passport-grid">${stamps}</div>
+    <h3>Improvement rewards</h3><div class="passport-grid">${badges}</div>`;
+  showScreen('passport', { ...options, route: '/passport' });
 }
 
 function updateHomeStats() {
@@ -699,15 +796,17 @@ function updateHomeSubtitle() {
     .filter(Boolean);
 
   const subtitle = document.querySelector('.subtitle');
-  subtitle.textContent = summaries.length
-    ? `${summaries.join(' • ')}.`
-    : 'Pick a game and keep your streak alive!';
+  subtitle.textContent = summaries.length ? 'Keep exploring and watch your skills grow!' : 'Pick a game and start an adventure!';
 }
 
 // ---- Mode menu / picker ----------------------------------------------------
 
 function getGameModes(game) {
-  return Array.isArray(game.modes) ? game.modes : [];
+  const modes = Array.isArray(game.modes) ? game.modes : [];
+  return [...modes,
+    { id: 'review', title: 'Practice my tricky ones', icon: '💪', description: 'Revisit missed skills at your own pace.', kind: 'play' },
+    { id: 'mastery', title: 'My Skills', icon: '🌱', description: 'See the skills you are learning and mastering.', kind: 'view' },
+  ];
 }
 
 function getMode(game, modeId) {
@@ -719,6 +818,7 @@ function renderModeCards(gameId, game) {
   list.innerHTML = '';
 
   getGameModes(game).forEach((mode, index) => {
+    if (mode.id === 'review' && !reviewSkills(loadStats(), gameId).length) return;
     const scoreLabel = mode.kind === 'play' ? highScoreLabel(gameId) : '';
     list.appendChild(createCard({
       className: 'mode-card',
@@ -734,8 +834,15 @@ function renderModeCards(gameId, game) {
 }
 
 function renderModeSelection(gameId, game, options = {}) {
+  stopActiveSession();
   state.pendingGameId = gameId;
+  state.selectedLevel = recommendedLevel(loadStats(), gameId);
+  const levels = game.levels || ['Fewer choices', 'More choices', 'All choices'];
+  $('level-select').innerHTML = LEVELS.map((label, index) => `<option value="${index + 1}">${label}</option>`).join('');
+  $('level-select').value = String(state.selectedLevel);
+  $('level-description').textContent = levels[state.selectedLevel - 1];
   $('mode-game-title').textContent = game.title;
+  document.querySelector('#screen-mode-menu .mode-subtitle').textContent = 'Pick how you want to play';
   renderModeCards(gameId, game);
   showScreen('mode-menu', { ...options, route: buildRoute({ gameId }) });
 }
@@ -761,7 +868,7 @@ function renderModeOptionPicker(gameId, mode, options = {}) {
     btn.className = 'table-btn';
     btn.textContent = label;
     btn.addEventListener('click', () => {
-      startMode(state.pendingGameId, mode.id, { [selection.key]: value });
+      startMode(state.pendingGameId, mode.id, { [selection.key]: value, level: state.selectedLevel });
     });
     optionsWrap.appendChild(btn);
   });
@@ -777,6 +884,16 @@ async function showModeView(game, mode, options = {}) {
   viewRoot.innerHTML = '<p class="mode-view-empty">Loading…</p>';
   showScreen('mode-view', { ...options, route: buildRoute({ gameId: game.id, modeId: mode.id }) });
 
+  if (mode.id === 'mastery') {
+    const stats = loadStats();
+    const skills = gameSkills(stats, game.id);
+    const summary = masterySummary(stats, game.id);
+    viewRoot.innerHTML = `<p>${summary.mastered} mastered / ${summary.practiced} practiced. Mastery needs at least three correct answers and 80% accuracy across the last five tries.</p>
+      <div class="skills-grid">${skills.map(([, skill]) => `<div class="skill-tile ${isMastered(skill) ? 'mastered' : ''}">
+        <strong>${escapeHtml(skill.label)}</strong><span>${isMastered(skill) ? 'Mastered' : 'Learning'}${skill.needsReview ? ' · Ready to review' : ''}</span>
+      </div>`).join('') || '<p>Play a game to start growing your skills!</p>'}</div>`;
+    return;
+  }
   viewRoot.innerHTML = typeof game.renderModeView === 'function'
     ? await game.renderModeView(mode.id, { stats: loadStats() })
     : '<p class="mode-view-empty">Nothing to show yet.</p>';
@@ -784,11 +901,12 @@ async function showModeView(game, mode, options = {}) {
 
 async function chooseMode(gameId, modeId) {
   const game = await loadGame(gameId);
+  state.currentGame = game;
   const mode = getMode(game, modeId);
   if (!mode) { startMode(gameId, null); return; }
   if (mode.selection) { renderModeOptionPicker(gameId, mode); return; }
   if (mode.kind === 'view') { showModeView(game, mode); return; }
-  startMode(gameId, mode.id);
+  startMode(gameId, mode.id, { level: state.selectedLevel });
 }
 
 // ---- Game session ----------------------------------------------------------
@@ -817,6 +935,10 @@ function renderQuestion() {
 
   prompt.innerHTML = question.prompt;
   answers.innerHTML = '';
+  state.session.answerLocked = false;
+  $('answer-explanation').hidden = true;
+  $('answer-explanation').innerHTML = '';
+  $('next-question-btn').hidden = true;
 
   if (question.useNumpad) {
     renderNumpad(answers);
@@ -832,6 +954,8 @@ function renderQuestion() {
   }
 
   setFeedback('');
+  document.querySelector('.game-body').scrollTop = 0;
+  if (question.onRender) question.onRender();
 }
 
 const NUMPAD_KEYS = ['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
@@ -854,7 +978,8 @@ function renderNumpad(container) {
 }
 
 function handleNumpadKey(key, display) {
-  if (state.session?.ended || !display) return;
+  if (!state.session || state.session.ended || state.session.answerLocked || !display
+      || !$('screen-game').classList.contains('active')) return;
 
   const current = display.textContent === '?' ? '' : display.textContent;
   if (key === '⌫') {
@@ -868,6 +993,16 @@ function handleNumpadKey(key, display) {
     if (current.length >= 4) return;
     display.textContent = current + key;
   }
+}
+
+function stopActiveSession() {
+  stopSessionTimer();
+  clearTimeout(state.answerTimeout);
+  state.answerTimeout = null;
+  if (state.currentQuestion?.onLeave) state.currentQuestion.onLeave();
+  if (state.session) state.session.ended = true;
+  $('next-question-btn').hidden = true;
+  $('answer-explanation').hidden = true;
 }
 
 // ---- Timer -----------------------------------------------------------------
@@ -924,7 +1059,9 @@ function computeScoreDelta(streak) {
 
 // Shared core for both multi-choice and numpad answers.
 function applyAnswerOutcome(value, { onReveal, correctFeedback, wrongFeedback }) {
-  if (!state.session || state.session.ended) return;
+  if (!state.session || state.session.ended || state.session.answerLocked) return;
+  const session = state.session;
+  session.answerLocked = true;
 
   const isCorrect = value === state.currentQuestion.correctValue;
   state.session.total += 1;
@@ -945,19 +1082,34 @@ function applyAnswerOutcome(value, { onReveal, correctFeedback, wrongFeedback })
   }
 
   const fact = state.currentQuestion.meta?.fact;
-  if (fact) recordProblemResult(fact.a, fact.b, isCorrect);
+  if (fact) recordProblemResult(fact, isCorrect);
+  const stats = loadStats();
+  const improved = recordLearning(stats, session.gameId, state.currentQuestion,
+    state.currentQuestion.sourceModeId || session.modeId, isCorrect);
+  saveStats(stats);
+  if (improved) setFeedback(`You got a tricky one right! ${getMascot()}`, 'correct-fb');
 
   if (onReveal) onReveal(isCorrect);
 
   updateSessionDisplay();
-  setTimeout(() => {
-    if (!state.session || state.session.ended) return;
-    advanceRound();
-  }, ANSWER_REVEAL_MS);
+  if ((!isCorrect && !session.timedSeconds) || session.modeId === 'practice' || session.modeId === 'review') {
+    const explanation = $('answer-explanation');
+    explanation.innerHTML = state.currentQuestion.explanation;
+    explanation.hidden = false;
+    $('next-question-btn').hidden = false;
+    $('next-question-btn').textContent = session.maxRounds && session.round + 1 >= session.maxRounds ? 'See results' : 'Next';
+    $('next-question-btn').focus({ preventScroll: true });
+    $('next-question-btn').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  } else {
+    state.answerTimeout = setTimeout(() => {
+      if (state.session !== session || session.ended) return;
+      advanceRound();
+    }, ANSWER_REVEAL_MS);
+  }
 }
 
 function submitAnswer(value, selectedButton) {
-  if (!state.session || state.session.ended) return;
+  if (!state.session || state.session.ended || state.session.answerLocked) return;
   lockAnswers();
   applyAnswerOutcome(value, {
     correctFeedback: (delta) => `Nice! ${getMascot()} +${delta}`,
@@ -967,7 +1119,7 @@ function submitAnswer(value, selectedButton) {
 }
 
 function submitNumpadAnswer(value) {
-  if (!state.session || state.session.ended) return;
+  if (!state.session || state.session.ended || state.session.answerLocked) return;
   lockNumpad();
   applyAnswerOutcome(value, {
     correctFeedback: (delta) => `Nice! ${getMascot()} +${delta}`,
@@ -983,6 +1135,10 @@ function submitNumpadAnswer(value) {
 
 async function advanceRound() {
   if (!state.session || state.session.ended) return;
+  const session = state.session;
+  clearTimeout(state.answerTimeout);
+  $('next-question-btn').hidden = true;
+  if (state.currentQuestion?.onLeave) state.currentQuestion.onLeave();
   state.session.round += 1;
 
   if (state.session.maxRounds && state.session.round >= state.session.maxRounds) {
@@ -990,17 +1146,52 @@ async function advanceRound() {
     return;
   }
   updateSessionDisplay();
-  state.currentQuestion = await state.currentGame.createQuestion(state.session);
-  if (!state.session || state.session.ended) return;
+  const question = await createSessionQuestion(session);
+  if (state.session !== session || session.ended) return;
+  state.currentQuestion = question;
   renderQuestion();
 }
 
+async function createSessionQuestion(session) {
+  const stats = loadStats();
+  let skill;
+  if (session.modeId === 'review') {
+    skill = stats.learning[session.gameId]?.[session.reviewKeys[session.round]];
+    if (!skill) throw new Error('This review skill is no longer available.');
+  } else if (!session.timedSeconds && session.round % 4 === 3) {
+    skill = reviewSkills(stats, session.gameId).find(([key]) => key !== state.currentQuestion?.learning.key)?.[1];
+  }
+  const context = skill ? { ...session, modeId: skill.modeId, reviewItem: skill.data } : session;
+  const question = await state.currentGame.createQuestion(context);
+  if (!question.learning || !question.explanation) throw new Error('This game is missing its learning description.');
+  question.sourceModeId = context.modeId;
+  if (question.answers) {
+    const correct = question.answers.find((answer) => answer.value === question.correctValue);
+    if (!correct) throw new Error('The question is missing its correct answer.');
+    const count = session.level + 1;
+    const choices = question.answers.filter((answer) => answer !== correct).slice(0, count - 1);
+    choices.splice(Math.floor(Math.random() * (choices.length + 1)), 0, correct);
+    question.answers = choices;
+  }
+  return question;
+}
+
 async function startMode(gameId, modeId, modeConfig = {}, options = {}) {
-  stopSessionTimer();
+  stopActiveSession();
   setTimerVisible(false);
 
   const game = state.currentGame;
   const mode = modeId ? getMode(game, modeId) : null;
+  const stats = loadStats();
+  const level = Number(modeConfig.level || recommendedLevel(stats, gameId));
+  if (![1, 2, 3].includes(level)) throw new Error('Choose a learning level from 1 to 3.');
+  modeConfig = { ...modeConfig, level };
+  const reviewKeys = modeId === 'review' ? reviewSkills(stats, gameId).slice(0, 10).map(([key]) => key) : [];
+  if (modeId === 'review' && !reviewKeys.length) {
+    renderModeSelection(gameId, game, options);
+    document.querySelector('#screen-mode-menu .mode-subtitle').textContent = 'No tricky skills to review yet. Pick a game mode to start learning!';
+    return;
+  }
 
   const session = {
     round: 0,
@@ -1015,17 +1206,27 @@ async function startMode(gameId, modeId, modeConfig = {}, options = {}) {
     maxRounds: DEFAULT_ROUNDS,
     timedSeconds: 0,
     ended: false,
+    answerLocked: true,
+    level,
+    reviewKeys,
   };
 
-  if (typeof game.initSession === 'function') {
+  if (modeId === 'review') {
+    session.maxRounds = reviewKeys.length;
+  } else if (typeof game.initSession === 'function') {
     Object.assign(session, game.initSession(modeId, modeConfig, session) || {});
   }
 
   state.currentMode = mode;
   state.session = session;
+  state.pendingGameId = gameId;
+  if (modeId !== 'review') {
+    stats.lastGame = { gameId, modeId, modeConfig };
+    saveStats(stats);
+  }
 
   const modeSuffix = mode ? ` — ${mode.title}` : '';
-  $('game-title').textContent = `${game.title}${modeSuffix}`;
+  $('game-title').textContent = `${game.title}${modeSuffix} · ${LEVELS[level - 1]}`;
   updateMascotDisplay();
   updateSessionDisplay();
 
@@ -1033,8 +1234,9 @@ async function startMode(gameId, modeId, modeConfig = {}, options = {}) {
   $('answers').innerHTML = '';
   showScreen('game', { ...options, route: buildRoute({ gameId, modeId, modeConfig }) });
 
-  state.currentQuestion = await game.createQuestion(state.session);
+  const question = await createSessionQuestion(session);
   if (state.session !== session || session.ended) return;
+  state.currentQuestion = question;
   renderQuestion();
 
   if (session.timedSeconds > 0) startSessionTimer(session.timedSeconds);
@@ -1062,23 +1264,29 @@ async function startGame(gameId) {
 
 function endGame() {
   if (!state.session || state.session.ended) return;
-  state.session.ended = true;
-  stopSessionTimer();
+  stopActiveSession();
 
   const session = state.session;
   const stats = loadStats();
   stats.bestStreak = Math.max(stats.bestStreak, session.bestStreak);
   stats.totalCorrect += session.correct;
+  const learningOutcome = completeLearningSession(stats, session, GAME_REGISTRY[session.gameId].category);
   saveStats(stats);
 
   // Skip high-score entries for sessions with no answers (e.g. immediate timeout).
-  const isHighScore = session.total > 0
+  const isHighScore = session.total > 0 && session.modeId !== 'review'
     && saveHighScore(session.gameId, session.score, session.correct, session.total);
   $('new-high-score').style.display = isHighScore ? '' : 'none';
 
   $('result-score').textContent = session.score;
   $('result-correct').textContent = `${session.correct}/${session.total}`;
   $('result-best-streak').textContent = session.bestStreak;
+  const mastery = masterySummary(stats, session.gameId);
+  $('learning-results').innerHTML = `<p>${mastery.mastered} skills mastered · ${mastery.practiced} practiced</p>
+    ${learningOutcome.promoted ? `<p>Ready to grow! Try ${LEVELS[recommendedLevel(stats, session.gameId) - 1]} next time.</p>` : ''}
+    ${learningOutcome.rewards.map((id) => { const badge = BADGES.find((item) => item.id === id); return `<p>${badge.icon} New reward: ${badge.title}</p>`; }).join('')}`;
+  $('btn-review').hidden = !reviewSkills(stats, session.gameId).length;
+  renderAnimalPicker();
 
   const accuracy = session.total > 0 ? session.correct / session.total : 0;
   const header = $('results-header');
@@ -1099,7 +1307,7 @@ function endGame() {
 }
 
 function goHome(options = {}) {
-  stopSessionTimer();
+  stopActiveSession();
   setTimerVisible(false);
 
   state.currentGame = null;
@@ -1111,6 +1319,7 @@ function goHome(options = {}) {
   updateHomeStats();
   updateMascotDisplay();
   renderGameCards();
+  renderHomeTools();
   updateHomeSubtitle();
   showScreen('home', { ...options, route: HOME_ROUTE });
 }
@@ -1126,8 +1335,14 @@ function goBackToModeMenu() {
 // ---- Routing-driven navigation --------------------------------------------
 
 async function navigateToRoute(route, options = {}) {
+  stopActiveSession();
   const { skipHistory = true, replaceHistory = false } = options;
   const { gameId, modeId, modeConfig } = parseRoute(route);
+
+  if (gameId === 'passport') {
+    showPassport({ skipHistory, replaceHistory });
+    return;
+  }
 
   if (!gameId) {
     goHome({ skipHistory, replaceHistory });
@@ -1162,7 +1377,7 @@ async function navigateToRoute(route, options = {}) {
     if (selectedValue === undefined) {
       renderModeOptionPicker(gameId, mode, { skipHistory, replaceHistory });
     } else {
-      startMode(gameId, mode.id, { [mode.selection.key]: selectedValue }, { skipHistory, replaceHistory });
+      startMode(gameId, mode.id, modeConfig, { skipHistory, replaceHistory });
     }
     return;
   }
@@ -1171,7 +1386,7 @@ async function navigateToRoute(route, options = {}) {
     showModeView(game, mode, { skipHistory, replaceHistory });
     return;
   }
-  startMode(gameId, mode.id, {}, { skipHistory, replaceHistory });
+  startMode(gameId, mode.id, modeConfig, { skipHistory, replaceHistory });
 }
 
 function handlePopState(event) {
@@ -1185,6 +1400,42 @@ function handlePopState(event) {
 
 function bindEvents() {
   window.addEventListener('popstate', handlePopState);
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Learning Hub operation failed:', event.reason);
+    const active = document.querySelector('.screen.active');
+    if (active?.id === 'screen-game') {
+      stopActiveSession();
+      setFeedback('Could not load this activity. Go back and try again.', 'wrong-fb');
+    } else {
+      alert('Could not open this activity. Please try again.');
+    }
+  });
+  $('level-select').addEventListener('change', () => {
+    state.selectedLevel = Number($('level-select').value);
+    $('level-description').textContent = (state.currentGame.levels || ['Fewer choices', 'More choices', 'All choices'])[state.selectedLevel - 1];
+  });
+  $('all-games-btn').addEventListener('click', () => {
+    state.gridView = !state.gridView;
+    $('all-games-btn').textContent = state.gridView ? 'Show carousel' : 'See all games';
+    $('all-games-btn').setAttribute('aria-pressed', String(state.gridView));
+    renderGameCards();
+  });
+  $('passport-btn').addEventListener('click', () => showPassport());
+  $('passport-back-btn').addEventListener('click', () => goHome());
+  $('continue-btn').addEventListener('click', async () => {
+    const last = loadStats().lastGame;
+    if (!last) return;
+    state.currentGame = await loadGame(last.gameId);
+    updateDailyStreak(loadStats());
+    state.pendingGameId = last.gameId;
+    startMode(last.gameId, last.modeId, last.modeConfig);
+  });
+  $('next-question-btn').addEventListener('click', () => {
+    if (state.session?.answerLocked && !state.session.ended && !$('next-question-btn').hidden) advanceRound();
+  });
+  $('btn-review').addEventListener('click', () => {
+    startMode(state.session.gameId, 'review', { level: state.session.level });
+  });
 
   document.addEventListener('keydown', (e) => {
     if (!state.currentQuestion?.useNumpad) return;
@@ -1242,6 +1493,7 @@ async function init() {
   bindEvents();
   renderAnimalPicker();
   renderGameCards();
+  renderHomeTools();
   updateHomeStats();
   updateMascotDisplay();
   updateHomeSubtitle();

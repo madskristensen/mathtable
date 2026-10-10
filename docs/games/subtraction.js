@@ -11,9 +11,9 @@ export const game = createArithmeticGame({
     options: Array.from({ length: 19 }, (_, i) => i + 2),
     defaultValue: 2,
   },
-  pickPair: ({ isPractice, table }) => {
-    const a = isPractice ? table : randomInt(2, 20);
-    return { a, b: randomInt(1, a) };
+  pickPair: ({ isPractice, table, limit }) => {
+    const a = isPractice ? table : randomInt(2, limit);
+    return { a, b: randomInt(1, Math.min(a, limit)) };
   },
   compute: (a, b) => a - b,
   practiceDescription: 'Pick a starting number and drill it.',

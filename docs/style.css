@@ -28,6 +28,132 @@
   --app-large-height: 100vh;
 }
 
+[hidden] { display: none !important; }
+
+.learning-btn {
+  min-height: 2.5rem;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--text);
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.learning-btn[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--white);
+}
+
+.home-tools, .category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.level-picker {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  color: var(--white);
+  text-align: center;
+}
+
+.level-picker select {
+  min-height: 2.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.game-card-progress { font-size: 0.65rem; margin-top: 0.4rem; }
+
+.games-carousel.games-grid-view {
+  display: block;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.games-grid-view::before { display: none; }
+.games-grid-view .category-group { margin: 0 0 1.5rem; }
+.games-grid-view .category-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+.games-grid-view .game-card { width: 100%; }
+
+.answer-explanation, .learning-results, .skill-tile, .passport-stamp {
+  background: var(--surface-strong);
+  border-radius: var(--radius);
+  padding: 1rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.answer-explanation {
+  width: 100%;
+  max-width: 30rem;
+}
+
+.answer-explanation p + p { margin-top: 0.6rem; }
+.game-body:has(.answer-explanation:not([hidden])) { justify-content: flex-start; }
+.game-body:has(#next-question-btn:not([hidden]))::after {
+  content: '';
+  flex: 0 0 2rem;
+}
+.game-body > * { flex-shrink: 0; }
+.results-content { overflow-y: auto; justify-content: flex-start; }
+.results-buttons { flex-wrap: wrap; justify-content: center; }
+.learning-results { max-width: 30rem; }
+.learning-results p + p { margin-top: 0.5rem; }
+
+.dot-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+.dot-groups > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  max-width: 7rem;
+  padding: 0.4rem;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+.learning-dot { width: 0.65rem; height: 0.65rem; border-radius: 50%; background: var(--accent); }
+.removed-dots { opacity: 0.45; }
+.removed-dots .learning-dot { background: var(--red); }
+.clock-teaching .question-title { display: none; }
+.clock-teaching .clock-face-wrap { margin: 0.75rem auto; }
+.clock-teaching .clock-hand.hour { background: var(--accent); }
+.clock-teaching .clock-hand.minute { background: var(--primary); }
+
+.skills-grid, .passport-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.75rem; }
+.skill-tile { display: grid; gap: 0.4rem; }
+.skill-tile.mastered, .passport-stamp.earned { border: 3px solid var(--green); }
+.passport-body { width: 100%; max-width: 55rem; margin: 0 auto; }
+.passport-body h3 { color: var(--white); margin: 1rem 0; }
+.passport-stamp { display: grid; gap: 0.5rem; border: 3px dashed var(--card-border); }
+.passport-stamp > span { font-size: 2.5rem; }
+
+.learning-btn:focus-visible, .level-picker select:focus-visible {
+  outline: 3px solid var(--white);
+  outline-offset: 3px;
+}
+
 @supports (height: 100dvh) {
   :root {
     --app-height: 100dvh;
@@ -596,6 +722,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   overflow-y: auto;
+  scroll-padding-block: 1.5rem;
 }
 
 .mode-content h2,
@@ -766,6 +893,11 @@ body {
   text-transform: uppercase;
 }
 
+#screen-game {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 .game-header {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -882,11 +1014,11 @@ body {
 }
 
 .game-body {
-  height: calc(100% - 5rem);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   gap: 1rem;
   overflow-y: auto;
 }

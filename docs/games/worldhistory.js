@@ -1,14 +1,14 @@
 // World History — kid-friendly multiple-choice trivia spanning the
 // ancient world through the modern era. Distractors are drawn from the
 // same era's answer pool so wrong choices stay plausible.
-import { shuffle } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers
 // in the same era pool.
 
 const ANCIENT = [
-  { q: 'Which ancient civilization built the Great Pyramids?', a: 'Egyptians' },
+  { q: 'Which ancient civilization built the Great Pyramids?', a: 'Egyptians', explanation: 'The pyramids were built as tombs for Egyptian rulers called pharaohs.' },
   { q: 'Which river was the heart of ancient Egypt?', a: 'The Nile' },
   { q: 'Who were the famous warriors of ancient Sparta?', a: 'Spartans' },
   { q: 'Which ancient city held the first Olympic Games?', a: 'Olympia' },
@@ -52,7 +52,7 @@ const ANCIENT = [
     choices: ['Triangles (pyramids)', 'Circles', 'Squares', 'Rectangles'] },
   { q: 'Which ancient Greek city-state was known for its tough warriors?', a: 'Sparta',
     choices: ['Sparta', 'Athens', 'Troy', 'Corinth'] },
-  { q: 'What did Romans build to carry water into their cities?', a: 'Aqueducts',
+  { q: 'What did Romans build to carry water into their cities?', a: 'Aqueducts', explanation: 'Aqueducts carried water along gently sloping channels, sometimes supported by tall arches.',
     choices: ['Aqueducts', 'Bridges', 'Tunnels', 'Canals'] },
   { q: 'Which creature in Greek myth was half human and half horse?', a: 'Centaur',
     choices: ['Centaur', 'Minotaur', 'Cyclops', 'Sphinx'] },
@@ -289,7 +289,12 @@ export const game = {
 
   createQuestion(session) {
     const pool = poolForMode(session?.modeId);
-    const question = pickQuestion(session, pool);
+    const question = session.reviewItem ? poolForMode('all').find((item) => item.q === session.reviewItem.q) : pickQuestion(session, pool);
+    if (!question) throw new Error('This history question is no longer available.');
+    const context = ANCIENT.includes(question) ? 'Ancient civilizations built cities, developed writing, and left buildings and stories we still study.'
+      : MEDIEVAL.includes(question) ? 'The Middle Ages came after ancient Rome. Different societies developed castles, trade routes, and new traditions.'
+      : EXPLORATION.includes(question) ? 'During the Renaissance and age of exploration, travel and new ideas connected people across the world.'
+      : 'Modern history includes inventions, social changes, and journeys that shaped the world we live in.';
     return {
       prompt: `
         <div class="history-prompt">
@@ -297,6 +302,7 @@ export const game = {
         </div>`,
       answers: buildAnswers(question, pool),
       correctValue: question.a,
+      ...historyLearning(question, context),
     };
   },
 };

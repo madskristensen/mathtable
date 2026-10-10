@@ -11,7 +11,9 @@ docs/
   index.html           App shell (static screens, one <div> per screen)
   style.css            All shared + game-specific styles
   app.js               Hub framework — state, routing, session loop
+  learning.js          Pure mastery, review, level progression, and reward helpers
   games/
+    _shared.js         Shared arithmetic factory and game helpers
     multiplication.js  Multiplication game module
     clock.js           Analog Clock game module
     timemath.js        Time Math game module
@@ -27,7 +29,8 @@ docs/
 
 All screens are `<div id="screen-{name}" class="screen">` in `index.html`. Only the `.active` one is visible. Switch with `showScreen(id)`.
 
-Current screens: `home`, `mode-menu`, `mode-option-picker`, `mode-view`, `game`, `results`.
+Current screens: `home`, `mode-menu`, `mode-option-picker`, `mode-view`, `game`, `results`, `passport`.
+The passport has its own `#/passport` route. Game routes preserve `level=1|2|3` alongside mode selections.
 
 ### Game registry
 
@@ -37,7 +40,7 @@ Add a game by extending `GAME_REGISTRY` in `app.js`:
 GAME_REGISTRY['my-game'] = {
   title: 'My Game',
   icon: '🎯',
-  category: 'math',             // 'math' | 'time' | 'reading' | 'geography' — shown as a badge on the home card
+  category: 'math',             // 'math' | 'time' | 'reading' | 'geography' | 'history'
   description: 'One-line description shown on the home card.',
   defaultMode: 'play',          // used for high-score subtitle on home screen
   loader: () => import('./games/my-game.js'),
@@ -48,11 +51,13 @@ GAME_REGISTRY['my-game'] = {
 
 Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Cards are grouped by `category`; before the first card of each category the framework inserts a slim **category header** (icon + label) that visually separates the groups (Math, Time, Reading, Geography).
 
+Subject filters limit the visible cards. **See all games** switches to a responsive grouped grid; carousel dots are hidden in grid view. **Continue playing** restarts the last non-review game/mode/config rather than resuming an unfinished round.
+
 Each card shows:
 - A large emoji `icon` (~4.5 rem) at the top
 - `title` below the icon
 - `description` as body text (keep it short — 1–2 sentences)
-- A high-score pill at the bottom (auto-populated by the framework)
+- A mastery count, practiced-skill count, and high score at the bottom
 
 Adding an entry to `GAME_REGISTRY` automatically adds a card and a dot indicator to the carousel — no HTML or CSS changes needed.
 
@@ -70,6 +75,10 @@ Adding an entry to `GAME_REGISTRY` automatically adds a card and a dot indicator
 | `session` | Current session (see below) |
 | `timerInterval` | Handle for Challenge-style countdown |
 | `pendingGameId/Mode` | Preserved during mode-picker navigation |
+| `selectedLevel` | Level selected in the mode menu; merged with picker selections |
+| `categoryFilter/gridView` | Current subject filter and grid/carousel choice |
+| `answerTimeout` | Auto-advance timeout; cancelled on every session exit |
+| `carouselCleanup` | Removes listeners before rebuilding cards |
 
 ### Session object
 
@@ -85,6 +94,11 @@ Created by `startMode()` and optionally extended by `game.initSession()`:
 | `timedSeconds` | 0 | Start a countdown if > 0 |
 | `score/streak/bestStreak/correct/total` | 0 | Tracked by framework |
 | `ended` | false | Set to `true` by `endGame()`; guards re-entry |
+| `level` | recommended level or 1 | Content difficulty and number of choices (2/3/4) |
+| `answerLocked` | true while loading | Blocks duplicate clicks/keyboard submissions until the next question renders |
+| `reviewKeys` | `[]` | Snapshot of up to ten missed skill keys for review sessions |
+
+All game exits cancel countdown/auto-advance and question `onLeave` hooks. Async question rendering checks session identity so older questions cannot replace a newer session.
 
 ### Shared stats (`localStorage`)
 
@@ -99,11 +113,22 @@ Key: `kids_hub_stats_v1`. Shape:
   },
   problems: {               // per-fact tracking (populated by recordProblemResult)
     '3x4': { correct: 5, wrong: 1 }
-  }
+  },
+  learning: {               // namespaced by game, then a stable skill key
+    multiplication: {
+      '3x4': { correct: 5, wrong: 1, recent: [true, true, true], streak: 3,
+        needsReview: false, label: '3 × 4 = 12', data: { a: 3, b: 4 },
+        modeId: 'quick', lastSeen: 0 }
+    }
+  },
+  levels: { multiplication: { level: 1, strongRuns: 0 } },
+  lastGame: { gameId: 'multiplication', modeId: 'quick', modeConfig: { level: 1 } },
+  passport: { games: [], categories: [], badges: [], improved: false }
 }
 ```
 
 Bump `STORAGE_KEY` (e.g. `kids_hub_stats_v2`) when the shape changes in a breaking way.
+The learning fields are additive and old scores/streaks/mascots remain valid under v1. Persist only small replay descriptors, never question HTML/SVG or hooks. Time Math keys group operation, starting minute, and duration to bound storage. Storage failures are logged and visibly reported without silently replacing saved data.
 
 ## Game module contract (`docs/games/*.js`)
 
@@ -116,6 +141,7 @@ export const game = {
   icon: '🎯',
   description: '…',
   defaultMode: 'play',       // optional; which modeId to use for home-screen high-score summary
+  levels: ['Starter description', 'Growing description', 'Explorer description'], // optional; default describes choice count
 
   // Optional: declare sub-game modes (omit if the game has only one mode)
   modes: [
@@ -143,7 +169,11 @@ export const game = {
         { value: 42, label: '<span>42</span>' },
       ],
       correctValue: 42,
-      meta: { fact: { a, b } },    // optional; framework passes fact to recordProblemResult()
+      explanation: '<p>Explain how to find the answer.</p>', // required trusted game HTML
+      learning: { key: 'stable-skill-key', label: 'Human-readable skill', data: { /* small JSON replay descriptor */ } },
+      meta: { fact: { a, b, key: '3x4' } }, // optional; explicit keys avoid operation collisions
+      // onRender() {},     // optional; starts DOM-dependent behavior after rendering
+      // onLeave() {},      // optional; cancels that behavior on advance/exit
     };
   },
 
@@ -154,6 +184,10 @@ export const game = {
   },
 };
 ```
+
+`createQuestion(session)` must honor `session.level` and, when present, `session.reviewItem` (a saved `learning.data` descriptor) to regenerate the exact skill/question instead of choosing a new one. The framework supplies its original `modeId` when replaying. Hooks must not be started during question creation; Flash Word starts its cancellable exposure in `onRender`.
+
+The framework adds virtual `review` (play) and `mastery` (view) modes to every game; do not declare these IDs in modules. Review is shown only when missed skills exist. My Skills is rendered by the hub, not `renderModeView`.
 
 ### Mode kinds
 
@@ -177,7 +211,15 @@ selection: {
 ## Scoring
 
 Base score per correct answer: `10 + min(streak × 2, 20)`. Implemented in `submitAnswer()` in `app.js`.  
-High scores are saved per `gameId:modeId` key. Games whose mode has `kind: 'view'` never generate scores.
+High scores are saved per `gameId`, folding legacy `gameId:modeId` buckets into the game's table. View modes and review sessions never generate high scores.
+
+## Learning loop and rewards
+
+- Untimed wrong answers show an explanation and wait for **Next**. Practice and review do this after every answer; Challenges retain the countdown/900ms advance.
+- Each answer records a game-scoped skill. At least three correct answers plus 80% accuracy over the most recent five attempts (or all attempts when fewer than five) count as mastery. Existing arithmetic/geography maps read this data, falling back to legacy facts only for untouched skills.
+- A wrong answer marks a skill for review until three consecutive correct answers. Every fourth untimed non-review question may revisit the oldest missed skill other than the current one. Review sessions snapshot up to ten such keys; their descriptors survive reloads.
+- Two strong completed untimed, non-review sessions (at least 10 answers, at least 80% accuracy) at the recommended level advance that recommendation up to level 3. A weaker eligible session resets the count. All levels are available immediately; recommendation changes never lock content.
+- Passport game stamps require a completed session with at least one answer. Badges recognize a first adventure, recovering a missed skill, exploring three categories, mastering five skills, and advancing a level. Three-category exploration unlocks the unicorn mascot and its existing theme. No attendance requirements or score perfection gates.
 
 ## Service worker
 
@@ -188,6 +230,11 @@ Update `CACHE_NAME` in `docs/sw.js` whenever new assets are added or filenames c
 - Vanilla JS ES modules only — no bundler, no npm.
 - All styles in `docs/style.css`; use existing CSS variables (`--primary`, `--surface`, `--radius`, etc.).
 - Game modules are self-contained; do not import from each other or from `app.js`.
+- Reuse `games/_shared.js` for game helpers and `learning.js` for pure learning rules.
 - Screen IDs in `index.html` must match the string passed to `showScreen()`.
 - Use `cursor: pointer` and min touch target sizes (≥ 2.5 rem) for all interactive elements.
 - No blocking network calls; offline support is required via the service worker.
+
+## Validation
+
+There is no build step or package manifest. Use Node.js 24+ built-in tooling: `node --test tests\learning.test.mjs` for learning rules and game-contract/range checks, and `node tests\browser.mjs` for real Edge mobile/offline regressions. Browser checks use an isolated temporary profile and localhost server, with no npm dependencies. `BROWSER_PATH` can override the Chromium executable. Run `node --check` on changed JavaScript modules as a syntax check.
