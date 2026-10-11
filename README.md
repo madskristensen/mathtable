@@ -31,7 +31,7 @@ A fast offline-friendly PWA that now acts as a hub for multiple kids learning ga
 - **My Skills** views and mastery counts on home cards. Mastery requires at least three correct answers and 80% accuracy over the last five attempts (or all attempts when fewer than five).
 - A Learning Passport with game stamps and improvement badges. Exploring three subjects unlocks a unicorn mascot; lessons are never locked.
 
-The Passport is opened from the home stats bar using a booklet icon and arrow. Game cards have subject-colored illustration panels; carousels align with the subject menu on both phones and wider screens. **Grid view** shows every game in grouped rows rather than a horizontal carousel; the subjects navigate within either layout.
+The Passport is opened from the home stats bar using a booklet icon and arrow. Game cards have subject-colored illustration panels; carousels align with the subject menu on both phones and wider screens. **Grid view** shows every game in grouped rows rather than a horizontal carousel; the subjects navigate within either layout. The layout toggle is hidden on phone-sized screens (600px and below).
 
 All new learning data stays on this device alongside existing scores and streaks. Missed skills stay in the review list until answered correctly three times in a row. Review sessions do not enter high-score tables or advance difficulty recommendations.
 

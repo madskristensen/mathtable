@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kids-hub-v66';
+const CACHE_NAME = 'kids-hub-v67';
 const CACHE_PREFIX = 'kids-hub-';
 const RUNTIME_CACHE = 'kids-hub-runtime-v1';
 const RUNTIME_CACHE_MAX_ENTRIES = 60;
@@ -6,7 +6,7 @@ const RUNTIME_CACHE_MAX_ENTRIES = 60;
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=66',
+  './style.css?v=67',
   './app.js?v=66',
   './learning.js?v=66',
   './manifest.json?v=66',

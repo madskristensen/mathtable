@@ -106,6 +106,10 @@
   .home-navigation .learning-btn:hover { background: rgba(255, 255, 255, 0.18); }
 }
 
+@media (max-width: 600px) {
+  #all-games-btn { display: none; }
+}
+
 .level-picker {
   display: grid;
   gap: 0.5rem;
@@ -936,6 +940,14 @@ body {
 #passport-btn svg { width: 1.4rem; height: 1.6rem; flex-shrink: 0; }
 #passport-btn .passport-arrow { font-size: 1.2rem; font-weight: 400; }
 #passport-btn:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+@media (max-width: 600px) {
+  #passport-btn {
+    flex-basis: 100%;
+    justify-content: center;
+    border-left: none;
+    padding-left: 0.4rem;
+  }
+}
 @media (hover: hover) {
   #passport-btn:hover { color: #fff; text-decoration: underline; }
 }

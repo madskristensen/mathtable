@@ -193,7 +193,7 @@ try {
         return { height: menu.height, right: menu.right, viewport: innerWidth,
           left: menu.left, firstCardLeft: document.querySelector('.game-card').getBoundingClientRect().left,
           overflow: document.querySelector('.home-content').scrollWidth,
-          targets: Array.from(document.querySelectorAll('.home-navigation button')).filter(b => !b.hidden).every(b => b.getBoundingClientRect().height >= 40) };
+          targets: Array.from(document.querySelectorAll('.home-navigation button')).filter(b => b.getClientRects().length).every(b => b.getBoundingClientRect().height >= 40) };
       })()`);
       assert.ok(mobile.height <= 100, `compact mobile menu: ${JSON.stringify(mobile)}`);
       assert.ok(Math.abs(mobile.left - mobile.firstCardLeft) <= 1, `phone carousel starts aligned with menu: ${JSON.stringify(mobile)}`);
@@ -203,9 +203,9 @@ try {
       await evaluate('document.querySelector("#category-filters button[data-category=geography]").click()');
       await sleep(600);
       assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
-      await click('all-games-btn');
+      assert.equal(await evaluate('getComputedStyle(document.getElementById("all-games-btn")).display'), 'none');
+      assert.equal(await evaluate('getComputedStyle(document.getElementById("passport-btn")).borderLeftWidth'), '0px');
       assert.ok(await evaluate('document.querySelector(".home-content").scrollWidth <= innerWidth'));
-      await click('all-games-btn');
     }
     assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
     console.log('PASS: compact menus, no tab underlines/top card strips, aligned carousel, subject scrolling, grid layout, Passport, and narrow touch targets');
@@ -264,7 +264,7 @@ try {
 
     // Load every production-version module (including maps) from the precache.
     await evaluate(`(async () => {
-      const cache = await caches.open('kids-hub-v66');
+      const cache = await caches.open('kids-hub-v67');
       for (const request of await cache.keys()) {
         if (/\\/games\\/[^/]+\\.js/.test(request.url)) {
           const { game } = await import(request.url);
@@ -470,7 +470,7 @@ try {
 
   await navigate('/');
   await ready('!!navigator.serviceWorker.controller', 'service-worker control');
-  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v66"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
+  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v67"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
   assert.ok(cached.includes('/learning.js'));
   await command('Network.enable');
   await command('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
