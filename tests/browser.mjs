@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'docs');
-const profile = await mkdtemp(join(tmpdir(), 'kids-hub-browser-'));
+const profile = await mkdtemp(join(dirname(root), '.browser-profile-'));
+const requests = [];
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.png': 'image/png' };
 const server = createServer(async (request, response) => {
+  requests.push(request.url);
   const path = resolve(root, `.${decodeURIComponent(new URL(request.url, 'http://localhost').pathname)}`);
   if (path !== root && !path.startsWith(root + sep)) { response.writeHead(403).end(); return; }
   try {
@@ -41,12 +42,12 @@ async function until(probe, label, attempts = 200) {
   throw new Error(`Timed out: ${label}`);
 }
 
-function command(method, params = {}) {
+function command(method, params = {}, sessionId) {
   const id = ++serial;
   return new Promise((done, fail) => {
     const timer = setTimeout(() => { pending.delete(id); fail(new Error(`CDP timed out: ${method}`)); }, 15000);
     pending.set(id, { done: (value) => { clearTimeout(timer); done(value); }, fail: (error) => { clearTimeout(timer); fail(error); } });
-    socket.send(JSON.stringify({ id, method, params }));
+    socket.send(JSON.stringify({ id, method, params, sessionId }));
   });
 }
 
@@ -90,7 +91,7 @@ try {
   await until(async () => {
     if (launchError) throw launchError;
     try { port = (await readFile(join(profile, 'DevToolsActivePort'), 'utf8')).split('\n')[0]; return true; }
-    catch (error) { if (error.code !== 'ENOENT') throw error; return false; }
+    catch (error) { if (!['ENOENT', 'EBUSY'].includes(error.code)) throw error; return false; }
   }, 'Edge debugger');
   const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
   socket = new WebSocket(targets.find((target) => target.type === 'page').webSocketDebuggerUrl);
@@ -109,18 +110,189 @@ try {
   await command('Page.enable');
   await command('Page.setLifecycleEventsEnabled', { enabled: true });
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `Math.random = () => 0.25; if (location.origin === ${JSON.stringify(origin)} && !localStorage.getItem('kids_hub_stats_v1')) localStorage.setItem('kids_hub_stats_v1', JSON.stringify({ mascot: '🦊', totalCorrect: 7, problems: { '3x4': { correct: 2, wrong: 1 } } }));` });
+  if (process.argv.includes('--performance-only')) {
+    await command('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+      window.__perf = { reads: 0, writes: 0, canvases: 0, peak: 0, frames: new Set() };
+      for (const [method, counter] of [['getItem', 'reads'], ['setItem', 'writes']]) {
+        const original = Storage.prototype[method];
+        Storage.prototype[method] = function(key, ...args) {
+          if (key === 'kids_hub_stats_v1') __perf[counter]++;
+          return original.call(this, key, ...args);
+        };
+      }
+      const create = document.createElement.bind(document);
+      document.createElement = function(name, ...args) { if (name === 'canvas') __perf.canvases++; return create(name, ...args); };
+      const raf = requestAnimationFrame, cancel = cancelAnimationFrame;
+      window.requestAnimationFrame = function(callback) {
+        const confetti = callback.name === 'draw';
+        const id = raf(now => { __perf.frames.delete(id); callback(now); });
+        if (confetti) { __perf.frames.add(id); __perf.peak = Math.max(__perf.peak, __perf.frames.size); }
+        return id;
+      };
+      window.cancelAnimationFrame = function(id) { __perf.frames.delete(id); cancel(id); };
+    })();` });
+  }
   await command('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await navigate();
   await ready('!!navigator.serviceWorker.controller', 'initial offline installation');
   await navigate();
+  assert.ok(await evaluate('getComputedStyle(document.body).fontFamily.startsWith("system-ui")'));
+  assert.equal(await evaluate(`document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]').length`), 0);
+  assert.equal(await evaluate('performance.getEntriesByType("resource").filter(entry => /fonts\\.(googleapis|gstatic)\\.com/.test(entry.name)).length'), 0);
+  if (process.argv.includes('--fonts-only')) {
+    await command('Network.enable');
+    await command('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
+    await navigate();
+    assert.ok(await evaluate('getComputedStyle(document.body).fontFamily.startsWith("system-ui")'));
+    assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
+    assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+    console.log('PASS: native system fonts, no Google Fonts requests, and offline reload');
+  } else if (process.argv.includes('--home-ui-only')) {
+    await command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+    await navigate();
+    await ready('new DOMMatrix(getComputedStyle(document.querySelector(".screen.active")).transform).isIdentity', 'settled home layout');
+    assert.equal(await evaluate('document.querySelectorAll("#category-filters button").length'), 5);
+    assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
+    assert.equal(await evaluate('document.getElementById("passport-btn").closest(".stats-bar") !== null'), true);
+    const desktop = await evaluate(`(() => {
+      const menu = document.querySelector('.home-navigation').getBoundingClientRect();
+      const group = document.querySelector('.category-group').getBoundingClientRect();
+      const tab = document.querySelector('#category-filters button');
+      return { menuHeight: menu.height, menuLeft: menu.left, groupLeft: group.left,
+        radius: getComputedStyle(tab).borderRadius, underline: getComputedStyle(tab).borderBottomWidth,
+        topStrip: getComputedStyle(document.querySelector('.game-card'), '::before').content };
+    })()`);
+    assert.ok(desktop.menuHeight <= 50, `compact desktop menu: ${JSON.stringify(desktop)}`);
+    assert.ok(Math.abs(desktop.menuLeft - desktop.groupLeft) <= 1, 'carousel starts aligned with menu');
+    assert.equal(desktop.radius, '0px');
+    assert.equal(desktop.underline, '0px');
+    assert.equal(desktop.topStrip, 'none');
+    const cardsBefore = await evaluate('Array.from(document.querySelectorAll(".game-card")).map(card => card.textContent)');
+    await evaluate('document.querySelector("#category-filters button[data-category=time]").click()');
+    await ready('Math.abs(document.querySelector(".category-group[data-category=time]").getBoundingClientRect().left - document.getElementById("games-grid").getBoundingClientRect().left) < 2', 'subject scroll alignment');
+    assert.deepEqual(await evaluate('Array.from(document.querySelectorAll(".game-card")).map(card => card.textContent)'), cardsBefore);
+    assert.equal(await evaluate('document.querySelector("#category-filters button[data-category=time]").getAttribute("aria-pressed")'), 'true');
+    await click('all-games-btn');
+    assert.equal(await evaluate('document.getElementById("all-games-btn").textContent'), 'Carousel view');
+    assert.equal(await evaluate('document.getElementById("carousel-dots").hidden'), true);
+    await evaluate('document.querySelector("#category-filters button[data-category=history]").click()');
+    await sleep(600);
+    assert.ok(await evaluate('document.querySelector(".home-content").scrollTop > 0'));
+    assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
+    await click('passport-btn');
+    await ready('document.getElementById("screen-passport").classList.contains("active")', 'stats passport navigation');
+    await click('passport-back-btn');
+    await click('all-games-btn');
+    for (const width of [390, 320]) {
+      await command('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: true });
+      await navigate();
+      await evaluate('document.getElementById("games-grid").scrollTo({ left: 0, behavior: "instant" })');
+      await ready('new DOMMatrix(getComputedStyle(document.querySelector(".screen.active")).transform).isIdentity', 'settled mobile menu');
+      const mobile = await evaluate(`(() => {
+        const menu = document.querySelector('.home-navigation').getBoundingClientRect();
+        return { height: menu.height, right: menu.right, viewport: innerWidth,
+          left: menu.left, firstCardLeft: document.querySelector('.game-card').getBoundingClientRect().left,
+          overflow: document.querySelector('.home-content').scrollWidth,
+          targets: Array.from(document.querySelectorAll('.home-navigation button')).filter(b => !b.hidden).every(b => b.getBoundingClientRect().height >= 40) };
+      })()`);
+      assert.ok(mobile.height <= 100, `compact mobile menu: ${JSON.stringify(mobile)}`);
+      assert.ok(Math.abs(mobile.left - mobile.firstCardLeft) <= 1, `phone carousel starts aligned with menu: ${JSON.stringify(mobile)}`);
+      assert.ok(mobile.right <= mobile.viewport && mobile.overflow <= mobile.viewport, 'menu fits narrow viewport');
+      assert.ok(mobile.targets, 'touch targets remain at least 40px');
+      assert.ok(await evaluate('document.querySelector("#passport-btn svg") !== null && document.querySelector("#passport-btn .passport-arrow") !== null'));
+      await evaluate('document.querySelector("#category-filters button[data-category=geography]").click()');
+      await sleep(600);
+      assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
+      await click('all-games-btn');
+      assert.ok(await evaluate('document.querySelector(".home-content").scrollWidth <= innerWidth'));
+      await click('all-games-btn');
+    }
+    assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+    console.log('PASS: compact menus, no tab underlines/top card strips, aligned carousel, subject scrolling, grid layout, Passport, and narrow touch targets');
+  } else if (process.argv.includes('--performance-only')) {
+    await ready('document.getElementById("offline-status").textContent === "Ready to play offline."', 'verified offline readiness');
+    assert.equal(await evaluate('__perf.reads'), 1, 'one initial stats read');
+    requests.length = 0;
+    await evaluate('Array.from(document.querySelectorAll("#category-filters button")).find(button => button.textContent.includes("Time")).click(); document.getElementById("all-games-btn").click()');
+    assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13, 'subject navigation and grid toggle keep every game rendered');
+    assert.equal(await evaluate('__perf.reads'), 1, 'home rerenders reuse parsed stats');
+
+    const target = await command('Target.createTarget', { url: `${origin}/index.html`, background: true });
+    const attached = await command('Target.attachToTarget', { targetId: target.targetId, flatten: true });
+    await until(async () => {
+      const result = await command('Runtime.evaluate', { expression: 'location.origin', returnByValue: true }, attached.sessionId);
+      return result.result.value === origin;
+    }, 'second tab origin');
+    const updated = await stats();
+    const readsBeforeInvalidation = await evaluate('__perf.reads');
+    updated.totalCorrect = 123;
+    updated.highScores = { multiplication: [{ score: 999, correct: 10, total: 10 }] };
+    const tabWrite = await command('Runtime.evaluate', { expression: `localStorage.setItem('kids_hub_stats_v1', ${JSON.stringify(JSON.stringify(updated))})` }, attached.sessionId);
+    assert.equal(tabWrite.exceptionDetails, undefined, 'second tab can write shared progress');
+    await ready('document.getElementById("home-total").textContent === "123"', 'real cross-tab invalidation');
+    assert.ok(await evaluate('Array.from(document.querySelectorAll(".game-card")).find(card => card.querySelector(".game-card-title").textContent === "Multiplication").querySelector(".game-card-progress").textContent.includes("999")'));
+    assert.equal(await evaluate('__perf.reads'), readsBeforeInvalidation + 1, 'one read on invalidation');
+    await command('Target.closeTarget', { targetId: target.targetId });
+    console.log('PASS: cached stats, home summary reuse, and real cross-tab invalidation');
+
+    await navigate('/multiplication/practice?table=3&level=1');
+    for (let round = 0; round < 3; round++) {
+      await evaluate('__perf.writes = 0');
+      await answerMath(true);
+      await ready('!document.getElementById("next-question-btn").hidden', 'answer persistence');
+      assert.equal(await evaluate('__perf.writes'), 1, 'one combined legacy + learning write per answer');
+      const saved = await stats();
+      assert.ok(Object.values(saved.learning.multiplication).some((skill) => skill.correct > 0));
+      assert.ok(Object.values(saved.problems).some((skill) => skill.correct > 0));
+      assert.equal(await evaluate('document.querySelectorAll(".confetti-canvas").length'), 1);
+      if (round < 2) await click('next-question-btn');
+    }
+    assert.equal(await evaluate('__perf.canvases'), 1, 'single reusable canvas');
+    assert.equal(await evaluate('__perf.peak'), 1, 'no overlapping confetti animation frames');
+    await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await ready('__perf.frames.size === 0 && document.querySelector(".confetti-canvas").hidden', 'reduced motion cancels celebration');
+    await click('next-question-btn');
+    await answerMath(true);
+    assert.equal(await evaluate('__perf.frames.size'), 0, 'reduced motion skips new celebrations');
+    await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    await click('next-question-btn');
+    await answerMath(true);
+    assert.equal(await evaluate('__perf.canvases'), 1);
+    await navigate('/');
+    assert.equal(await evaluate('__perf.frames.size'), 0, 'leaving game cancels celebration');
+    console.log('PASS: one write per answer, reusable canvas, no overlap, reduced-motion cancellation');
+
+    // Load every production-version module (including maps) from the precache.
+    await evaluate(`(async () => {
+      const cache = await caches.open('kids-hub-v66');
+      for (const request of await cache.keys()) {
+        if (/\\/games\\/[^/]+\\.js/.test(request.url)) {
+          const { game } = await import(request.url);
+          if (!game) continue;
+          const mode = game.modes?.find(mode => mode.kind === 'play');
+          await game.createQuestion({ level: 1, modeId: mode?.id, modeConfig: {}, round: 0 });
+        }
+      }
+    })()`);
+    await sleep(200);
+    assert.deepEqual(requests, [], 'cached shell and required assets never revalidate on the server');
+    await command('Network.enable');
+    await command('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
+    await command('Page.reload');
+    await ready('document.querySelectorAll(".game-card").length === 13', 'offline shell reload');
+    await navigate('/europe/quick?level=1');
+    await ready('!!document.querySelector(".us-map-highlight")', 'offline versioned shared imports and SVG');
+    assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
+    console.log('PASS: verified offline readiness, zero precache revalidation, all lazy imports, offline map reload');
+  } else {
   assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
   assert.equal((await stats()).totalCorrect, 7, 'legacy stats preserved');
-  await evaluate('Array.from(document.querySelectorAll("#category-filters button")).find(b => b.textContent === "Time").click()');
-  assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 2);
+  await evaluate('Array.from(document.querySelectorAll("#category-filters button")).find(b => b.textContent.includes("Time")).click()');
+  assert.equal(await evaluate('document.querySelectorAll(".game-card").length'), 13);
   await click('all-games-btn');
   assert.equal(await evaluate('document.getElementById("carousel-dots").hidden'), true);
   assert.equal(await evaluate('document.getElementById("games-grid").classList.contains("games-grid-view")'), true);
-  console.log('PASS: discovery filters, grid, and legacy progress');
+  console.log('PASS: subject navigation, grid, and legacy progress');
 
   const matrix = await evaluate(`(async () => {
     let count = 0;
@@ -298,7 +470,7 @@ try {
 
   await navigate('/');
   await ready('!!navigator.serviceWorker.controller', 'service-worker control');
-  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v64"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
+  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v66"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
   assert.ok(cached.includes('/learning.js'));
   await command('Network.enable');
   await command('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
@@ -310,6 +482,7 @@ try {
   assert.equal(exceptions.length, 0, JSON.stringify(exceptions));
   console.log('PASS: offline reloads, learning module, and SVG geography assets; no browser exceptions');
   console.log('All browser regressions passed.');
+  }
 } finally {
   if (socket?.readyState === WebSocket.OPEN) {
     await command('Browser.close').catch((error) => console.error('Browser close:', error.message));

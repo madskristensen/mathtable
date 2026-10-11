@@ -1,8 +1,8 @@
-import { MODE_IDS, randomInt, shuffle } from './_shared.js';
-import { STATES, STATE_CODES, REGIONS, codesByRegion } from './data/us-states.js';
-import { isMastered } from '../learning.js';
+import { MODE_IDS, randomInt, shuffle } from './_shared.js?v=66';
+import { STATES, STATE_CODES, REGIONS, codesByRegion } from './data/us-states.js?v=66';
+import { isMastered } from '../learning.js?v=66';
 
-const SVG_URL = './games/data/us-states.svg?v=1';
+const SVG_URL = './games/data/us-states.svg?v=66';
 
 // Cache the parsed SVG document so we don't re-fetch every question.
 let svgPromise = null;

@@ -1,7 +1,7 @@
 // Flash Word — a word appears for a brief moment, then the player picks
 // which word they saw from 4 visually-similar options. Trains whole-word
 // recognition (the perceptual skill behind reading fluency).
-import { shuffle, randomItem } from './_shared.js';
+import { shuffle, randomItem } from './_shared.js?v=66';
 
 // ---- Word banks ------------------------------------------------------------
 

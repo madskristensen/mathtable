@@ -2,7 +2,7 @@
 // and famous stories from Norse, Greek, Roman, and Egyptian mythology.
 // Distractors are drawn from the same pantheon's answer pool so wrong
 // choices stay plausible.
-import { shuffle, historyLearning } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js?v=66';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers

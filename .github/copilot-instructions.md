@@ -51,10 +51,10 @@ GAME_REGISTRY['my-game'] = {
 
 Game cards are displayed as a **horizontal scroll-snap portrait carousel**. Cards are grouped by `category`; before the first card of each category the framework inserts a slim **category header** (icon + label) that visually separates the groups (Math, Time, Reading, Geography).
 
-Subject filters limit the visible cards. **See all games** switches to a responsive grouped grid; carousel dots are hidden in grid view. **Continue playing** restarts the last non-review game/mode/config rather than resuming an unfinished round.
+The compact subject menu scrolls to a category without filtering out games; there is no All subjects entry. **Grid view / Carousel view** switches layouts, and carousel dots are hidden in grid view. Carousels align to the menu's left edge at every screen size. **Continue playing** restarts the last non-review game/mode/config rather than resuming an unfinished round. **Passport** is in the stats bar with a booklet icon and arrow, not the top menu. Subject buttons indicate selection with text weight, not rounded backgrounds or underlines.
 
 Each card shows:
-- A large emoji `icon` (~4.5 rem) at the top
+- A large emoji `icon` in a subject-colored decorative panel (no colored top border)
 - `title` below the icon
 - `description` as body text (keep it short — 1–2 sentences)
 - A mastery count, practiced-skill count, and high score at the bottom
@@ -76,7 +76,7 @@ Adding an entry to `GAME_REGISTRY` automatically adds a card and a dot indicator
 | `timerInterval` | Handle for Challenge-style countdown |
 | `pendingGameId/Mode` | Preserved during mode-picker navigation |
 | `selectedLevel` | Level selected in the mode menu; merged with picker selections |
-| `categoryFilter/gridView` | Current subject filter and grid/carousel choice |
+| `homeCategory/gridView` | Current navigated subject and grid/carousel choice; all games remain rendered |
 | `answerTimeout` | Auto-advance timeout; cancelled on every session exit |
 | `carouselCleanup` | Removes listeners before rebuilding cards |
 
@@ -129,6 +129,8 @@ Key: `kids_hub_stats_v1`. Shape:
 
 Bump `STORAGE_KEY` (e.g. `kids_hub_stats_v2`) when the shape changes in a breaking way.
 The learning fields are additive and old scores/streaks/mascots remain valid under v1. Persist only small replay descriptors, never question HTML/SVG or hooks. Time Math keys group operation, starting minute, and duration to bound storage. Storage failures are logged and visibly reported without silently replacing saved data.
+
+`loadStats()` returns the tab's in-memory normalized stats, reading/parsing storage only initially or after a `storage` event for this key (including `localStorage.clear()`). Save through `saveStats()` to invalidate cached rendering summaries. An answer mutates legacy `problems` and namespaced `learning` together, then persists once. Cross-tab invalidation refreshes home stats/cards without replacing the active session; simultaneous writes remain last-writer-wins.
 
 ## Game module contract (`docs/games/*.js`)
 
@@ -223,7 +225,13 @@ High scores are saved per `gameId`, folding legacy `gameId:modeId` buckets into 
 
 ## Service worker
 
-Update `CACHE_NAME` in `docs/sw.js` whenever new assets are added or filenames change so the service worker re-caches correctly.
+Update `CACHE_NAME` in `docs/sw.js` and required asset query versions together whenever release assets change. Release v66 uses `?v=66` throughout the shell, lazy modules, transitive imports, map data, and manifest icons; `sw.js` and navigation HTML stay unversioned. Keep every dependency in `ASSETS`; `tests\performance.test.mjs` verifies the dependency closure and consistent versions.
+
+Install fetches every required asset with HTTP-cache bypass and checks status/content type before writes. Any failure rejects installation and deletes only the new release after all writes settle, preserving the old worker/cache. Do not call `skipWaiting()` during install: activation requires the user-confirmed update banner. Precached assets never revalidate. Runtime resources are bounded, app-scope-only, and cache writes/trimming are registered synchronously with `event.waitUntil()`. Cleanup only deletes obsolete `kids-hub-` caches; unrelated caches are untouched. Navigation uses the cached shell, and uncached offline requests get an explicit 503 response.
+
+The home offline status uses `OFFLINE_STATUS` with a MessageChannel to ask the controlling worker to verify all required entries; registration alone is not proof of readiness. Readiness is a snapshot, not protection against later browser storage eviction.
+
+Confetti uses one reusable hidden canvas, cancels its previous animation frame before relaunch and on screen changes, and skips/stops when `prefers-reduced-motion` changes to reduce. Rendering summaries cache each game's mastery and sorted high scores until stats change.
 
 ## Conventions
 
@@ -237,4 +245,4 @@ Update `CACHE_NAME` in `docs/sw.js` whenever new assets are added or filenames c
 
 ## Validation
 
-There is no build step or package manifest. Use Node.js 24+ built-in tooling: `node --test tests\learning.test.mjs` for learning rules and game-contract/range checks, and `node tests\browser.mjs` for real Edge mobile/offline regressions. Browser checks use an isolated temporary profile and localhost server, with no npm dependencies. `BROWSER_PATH` can override the Chromium executable. Run `node --check` on changed JavaScript modules as a syntax check.
+There is no build step or package manifest. Use Node.js 24+ built-in tooling: `node --test tests\learning.test.mjs tests\performance.test.mjs` for learning/game-contract and service-worker regressions, and `node tests\browser.mjs` for real Edge mobile/offline regressions. Focused flags `--performance-only` and `--fonts-only` cover performance/cross-tab/cache behavior and native offline typography without the full mobile game matrix. Browser checks use an isolated `.browser-profile-*` directory inside the repository (removed after the run) and localhost server, with no npm dependencies. `BROWSER_PATH` can override the Chromium executable. Run `node --check` on changed JavaScript modules as a syntax check.

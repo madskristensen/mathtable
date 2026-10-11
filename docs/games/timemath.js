@@ -1,4 +1,4 @@
-import { MODE_IDS, randomInt, randomItem, shuffle, pad2 } from './_shared.js';
+import { MODE_IDS, randomInt, randomItem, shuffle, pad2 } from './_shared.js?v=66';
 
 const SHIFT_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90];
 const ELAPSED_DURATIONS = [5, 10, 15, 20, 25, 30, 45, 60, 90, 120];

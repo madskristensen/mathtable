@@ -1,7 +1,7 @@
 // US History — kid-friendly multiple-choice trivia covering the
 // founding of the United States through modern times. Distractors are
 // drawn from the same era's answer pool so wrong choices stay plausible.
-import { shuffle, historyLearning } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js?v=66';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers

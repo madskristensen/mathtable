@@ -1,5 +1,5 @@
 // Shared helpers and factories used by individual game modules.
-import { escapeHtml, isMastered } from '../learning.js';
+import { escapeHtml, isMastered } from '../learning.js?v=66';
 
 export const MODE_IDS = {
   QUICK: 'quick',

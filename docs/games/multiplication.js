@@ -1,4 +1,4 @@
-import { createArithmeticGame, randomInt } from './_shared.js';
+import { createArithmeticGame, randomInt } from './_shared.js?v=66';
 
 export const game = createArithmeticGame({
   id: 'multiplication',

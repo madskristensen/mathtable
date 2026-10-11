@@ -1,7 +1,7 @@
 // World History — kid-friendly multiple-choice trivia spanning the
 // ancient world through the modern era. Distractors are drawn from the
 // same era's answer pool so wrong choices stay plausible.
-import { shuffle, historyLearning } from './_shared.js';
+import { shuffle, historyLearning } from './_shared.js?v=66';
 
 // Each question: { q, a, choices? }
 // If `choices` is omitted, three distractors are picked from other answers

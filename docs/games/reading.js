@@ -1,6 +1,6 @@
 // Word-bank entries: { word, emoji, category }
 // category: 'animals' | 'food' | 'things'
-import { shuffle } from './_shared.js';
+import { shuffle } from './_shared.js?v=66';
 
 const WORDS = [
   // Animals

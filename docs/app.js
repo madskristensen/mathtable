@@ -1,5 +1,5 @@
 import { LEVELS, BADGES, escapeHtml, isMastered, gameSkills, reviewSkills, masterySummary,
-  recordLearning, recommendedLevel, completeLearningSession } from './learning.js';
+  recordLearning, recommendedLevel, completeLearningSession } from './learning.js?v=66';
 
 const STORAGE_KEY = 'kids_hub_stats_v1';
 const DEFAULT_ROUNDS = 10;
@@ -27,7 +27,7 @@ const GAME_REGISTRY = {
     category: 'math',
     description: 'Add numbers fast and build your streak!',
     defaultMode: 'quick',
-    loader: () => import('./games/addition.js?v=16'),
+    loader: () => import('./games/addition.js?v=66'),
   },
   subtraction: {
     title: 'Subtraction',
@@ -35,7 +35,7 @@ const GAME_REGISTRY = {
     category: 'math',
     description: 'Take away and race the clock!',
     defaultMode: 'quick',
-    loader: () => import('./games/subtraction.js?v=16'),
+    loader: () => import('./games/subtraction.js?v=66'),
   },
   multiplication: {
     title: 'Multiplication',
@@ -43,7 +43,7 @@ const GAME_REGISTRY = {
     category: 'math',
     description: 'Master your times tables!',
     defaultMode: 'quick',
-    loader: () => import('./games/multiplication.js?v=16'),
+    loader: () => import('./games/multiplication.js?v=66'),
   },
   division: {
     title: 'Division',
@@ -51,7 +51,7 @@ const GAME_REGISTRY = {
     category: 'math',
     description: 'Split numbers and become a division pro!',
     defaultMode: 'quick',
-    loader: () => import('./games/division.js?v=16'),
+    loader: () => import('./games/division.js?v=66'),
   },
   clock: {
     title: 'Tell Time (Analog Clock)',
@@ -59,7 +59,7 @@ const GAME_REGISTRY = {
     category: 'time',
     description: 'Read the clock hands like a pro!',
     defaultMode: 'quick',
-    loader: () => import('./games/clock.js?v=16'),
+    loader: () => import('./games/clock.js?v=66'),
   },
   timemath: {
     title: 'Time Math',
@@ -67,7 +67,7 @@ const GAME_REGISTRY = {
     category: 'time',
     description: 'Add and subtract minutes and hours!',
     defaultMode: 'quick',
-    loader: () => import('./games/timemath.js?v=16'),
+    loader: () => import('./games/timemath.js?v=66'),
   },
   reading: {
     title: 'Word Reading',
@@ -75,7 +75,7 @@ const GAME_REGISTRY = {
     category: 'reading',
     description: 'Read the word and pick the picture!',
     defaultMode: 'quick',
-    loader: () => import('./games/reading.js?v=16'),
+    loader: () => import('./games/reading.js?v=66'),
   },
   flashword: {
     title: 'Flash Word',
@@ -83,7 +83,7 @@ const GAME_REGISTRY = {
     category: 'reading',
     description: 'A word flashes — can you spot it?',
     defaultMode: 'sight',
-    loader: () => import('./games/flashword.js?v=16'),
+    loader: () => import('./games/flashword.js?v=66'),
   },
   usstates: {
     title: 'Find the State',
@@ -91,7 +91,7 @@ const GAME_REGISTRY = {
     category: 'geography',
     description: 'Spot US states on the map!',
     defaultMode: 'quick',
-    loader: () => import('./games/usstates.js?v=2'),
+    loader: () => import('./games/usstates.js?v=66'),
   },
   europe: {
     title: 'Find the Country',
@@ -99,7 +99,7 @@ const GAME_REGISTRY = {
     category: 'geography',
     description: 'Explore Europe and learn its countries!',
     defaultMode: 'quick',
-    loader: () => import('./games/europe.js?v=9'),
+    loader: () => import('./games/europe.js?v=66'),
   },
   worldhistory: {
     title: 'World History',
@@ -107,7 +107,7 @@ const GAME_REGISTRY = {
     category: 'history',
     description: 'Travel through time and meet the world!',
     defaultMode: 'all',
-    loader: () => import('./games/worldhistory.js?v=1'),
+    loader: () => import('./games/worldhistory.js?v=66'),
   },
   ushistory: {
     title: 'US History',
@@ -115,7 +115,7 @@ const GAME_REGISTRY = {
     category: 'history',
     description: 'Discover the story of the United States!',
     defaultMode: 'all',
-    loader: () => import('./games/ushistory.js?v=1'),
+    loader: () => import('./games/ushistory.js?v=66'),
   },
   mythology: {
     title: 'Mythology',
@@ -123,7 +123,7 @@ const GAME_REGISTRY = {
     category: 'history',
     description: 'Meet the gods and heroes of ancient myths!',
     defaultMode: 'all',
-    loader: () => import('./games/mythology.js?v=1'),
+    loader: () => import('./games/mythology.js?v=66'),
   },
 };
 
@@ -155,7 +155,7 @@ const state = {
   mascotSurpriseTimeout: null,
   isHandlingPopState: false,
   currentRoute: HOME_ROUTE,
-  categoryFilter: 'all',
+  homeCategory: 'math',
   gridView: false,
   answerTimeout: null,
   selectedLevel: 1,
@@ -229,15 +229,24 @@ function defaultStats() {
   };
 }
 
+let cachedStats = null;
+let hasSavedAnimal = false;
+const renderingSummaries = new Map();
+
 function loadStats() {
+  if (cachedStats) return cachedStats;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultStats();
+    if (!raw) {
+      hasSavedAnimal = false;
+      return (cachedStats = defaultStats());
+    }
     const parsed = JSON.parse(raw);
+    hasSavedAnimal = Boolean(parsed.mascot);
     const unlocked = parsed.passport?.badges?.includes('curious-explorer');
     const mascot = ANIMALS.includes(parsed.mascot) || (unlocked && parsed.mascot === REWARD_MASCOT)
       ? parsed.mascot : DEFAULT_MASCOT;
-    return {
+    return (cachedStats = {
       ...defaultStats(),
       ...parsed,
       mascot,
@@ -246,7 +255,7 @@ function loadStats() {
       learning: parsed.learning || {},
       levels: parsed.levels || {},
       passport: { ...defaultStats().passport, ...parsed.passport },
-    };
+    });
   } catch (error) {
     reportStorageError('Your progress could not be read. Saved data has not been changed.', error);
     throw error;
@@ -254,13 +263,32 @@ function loadStats() {
 }
 
 function saveStats(stats) {
+  renderingSummaries.clear();
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    cachedStats = stats;
   } catch (error) {
     reportStorageError('Your progress could not be saved. Check that browser storage is available.', error);
     throw error;
   }
 }
+
+window.addEventListener('storage', (event) => {
+  if (event.storageArea !== localStorage || (event.key !== STORAGE_KEY && event.key !== null)) return;
+  cachedStats = null;
+  renderingSummaries.clear();
+  try {
+    updateMascotDisplay();
+    if ($('screen-home').classList.contains('active')) {
+      renderHomeTools();
+      renderGameCards();
+      updateHomeStats();
+      updateHomeSubtitle();
+    }
+  } catch {
+    // loadStats reports unreadable storage without replacing the saved data.
+  }
+});
 
 function reportStorageError(message, error) {
   console.error(message, error);
@@ -317,8 +345,21 @@ function getGameHighScoreEntries(stats, gameId) {
   return entries.sort((a, b) => b.score - a.score).slice(0, MAX_HIGH_SCORES);
 }
 
+function getRenderingSummary(gameId) {
+  if (!renderingSummaries.has(gameId)) {
+    const stats = loadStats();
+    const entries = getGameHighScoreEntries(stats, gameId);
+    let accuracy = null;
+    for (const entry of entries) {
+      if (entry?.total) accuracy = Math.max(accuracy ?? 0, entry.correct / entry.total);
+    }
+    renderingSummaries.set(gameId, { entries, accuracy, mastery: masterySummary(stats, gameId) });
+  }
+  return renderingSummaries.get(gameId);
+}
+
 function getHighScore(gameId) {
-  return getGameHighScoreEntries(loadStats(), gameId)[0] || null;
+  return getRenderingSummary(gameId).entries[0] || null;
 }
 
 function saveHighScore(gameId, score, correct, total) {
@@ -337,12 +378,10 @@ function saveHighScore(gameId, score, correct, total) {
   return stats.highScores[gameId][0]?.score === score;
 }
 
-function recordProblemResult(fact, correct) {
-  const stats = loadStats();
+function recordProblemResult(stats, fact, correct) {
   const key = fact.key || `${fact.a}x${fact.b}`;
   const entry = stats.problems[key] || (stats.problems[key] = { correct: 0, wrong: 0 });
   entry[correct ? 'correct' : 'wrong'] += 1;
-  saveStats(stats);
 }
 
 // ---- Mascot UI -------------------------------------------------------------
@@ -462,17 +501,42 @@ function renderAnimalPicker() {
 
 // ---- Confetti --------------------------------------------------------------
 
+let confettiCanvas = null;
+let confettiFrame = null;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function stopConfetti() {
+  if (confettiFrame !== null) cancelAnimationFrame(confettiFrame);
+  confettiFrame = null;
+  if (confettiCanvas) {
+    confettiCanvas.getContext('2d')?.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    confettiCanvas.hidden = true;
+  }
+}
+
+reducedMotion.addEventListener('change', () => {
+  if (reducedMotion.matches) stopConfetti();
+});
+
 function launchConfetti() {
+  stopConfetti();
+  if (reducedMotion.matches) return;
   const COLORS = ['#ff595e','#ffca3a','#6a4c93','#1982c4','#8ac926','#ff924c','#ffffff'];
   const PARTICLE_COUNT = 80;
   const DURATION_MS = 1400;
 
-  const canvas = document.createElement('canvas');
-  canvas.className = 'confetti-canvas';
+  if (!confettiCanvas) {
+    confettiCanvas = document.createElement('canvas');
+    confettiCanvas.className = 'confetti-canvas';
+    confettiCanvas.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(confettiCanvas);
+  }
+  const canvas = confettiCanvas;
+  canvas.hidden = false;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
+  if (!ctx) { canvas.hidden = true; return; }
 
   const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
     x: Math.random() * canvas.width,
@@ -490,7 +554,7 @@ function launchConfetti() {
   const start = performance.now();
   function draw(now) {
     const elapsed = now - start;
-    if (elapsed >= DURATION_MS) { canvas.remove(); return; }
+    if (elapsed >= DURATION_MS) { stopConfetti(); return; }
     const alpha = elapsed < DURATION_MS * 0.7
       ? 1
       : 1 - (elapsed - DURATION_MS * 0.7) / (DURATION_MS * 0.3);
@@ -509,14 +573,15 @@ function launchConfetti() {
       else { ctx.beginPath(); ctx.arc(0, 0, p.r / 2, 0, Math.PI * 2); ctx.fill(); }
       ctx.restore();
     }
-    requestAnimationFrame(draw);
+    confettiFrame = requestAnimationFrame(draw);
   }
-  requestAnimationFrame(draw);
+  confettiFrame = requestAnimationFrame(draw);
 }
 
 // ---- Screen + history navigation ------------------------------------------
 
 function showScreen(id, options = {}) {
+  stopConfetti();
   const {
     skipHistory = false,
     replaceHistory = false,
@@ -563,14 +628,7 @@ function highScoreLabel(gameId) {
 // Best accuracy (correct / total) across all stored runs for a game.
 // Returns null if the game has no recorded runs with answered questions.
 function getBestAccuracy(gameId) {
-  const entries = getGameHighScoreEntries(loadStats(), gameId);
-  let best = null;
-  for (const entry of entries) {
-    if (!entry || !entry.total) continue;
-    const acc = entry.correct / entry.total;
-    if (best === null || acc > best) best = acc;
-  }
-  return best;
+  return getRenderingSummary(gameId).accuracy;
 }
 
 // Star-rating HTML used on home-screen game cards. Encourages kids to keep
@@ -612,17 +670,17 @@ function renderGameCards() {
   carousel.innerHTML = '';
   dotsContainer.innerHTML = '';
 
-  const stats = loadStats();
-  const gameIds = Object.keys(GAME_REGISTRY).filter((id) => state.categoryFilter === 'all'
-    || GAME_REGISTRY[id].category === state.categoryFilter);
+  const gameIds = Object.keys(GAME_REGISTRY);
   let currentGroupRow = null;
   let lastCategory = null;
   gameIds.forEach((gameId, index) => {
     const game = GAME_REGISTRY[gameId];
+    const { mastery } = getRenderingSummary(gameId);
 
     if (!currentGroupRow || game.category !== lastCategory) {
       const group = document.createElement('div');
       group.className = 'category-group';
+      group.dataset.category = game.category;
 
       if (game.category) {
         const meta = CATEGORIES[game.category];
@@ -649,10 +707,10 @@ function renderGameCards() {
       icon: game.icon,
       title: game.title,
       desc: game.description,
-      scoreLabel: `${masterySummary(stats, gameId).mastered} skills mastered`,
+      scoreLabel: `${mastery.mastered} skills mastered`,
       onClick: () => startGame(gameId),
     });
-    const mastery = masterySummary(stats, gameId);
+    card.dataset.category = game.category;
     const detail = document.createElement('span');
     detail.className = 'game-card-progress';
     detail.textContent = `${mastery.practiced} practiced · ${highScoreLabel(gameId)}`;
@@ -668,18 +726,14 @@ function renderGameCards() {
     dotsContainer.appendChild(dot);
   });
 
-  // Keep the active dot in sync with the card whose centre is closest to
-  // the carousel's centre. Using "closest to centre" (rather than an
-  // IntersectionObserver threshold) avoids the case where multiple cards
-  // are fully visible at once and the wrong one wins.
+  // Track the card nearest the leading edge, even when several cards are visible.
   const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
   const cards = Array.from(carousel.querySelectorAll('.game-card'));
 
   const updateActiveDot = () => {
     if (!cards.length) return;
     let bestIdx;
-    // At the scroll extremes the last/first card may never reach the
-    // carousel centre, so snap to the end card explicitly.
+    // The last card cannot always reach the leading edge at the scroll limit.
     const maxScroll = carousel.scrollWidth - carousel.clientWidth;
     if (carousel.scrollLeft >= maxScroll - 1) {
       bestIdx = cards.length - 1;
@@ -687,17 +741,23 @@ function renderGameCards() {
       bestIdx = 0;
     } else {
       const carouselRect = carousel.getBoundingClientRect();
-      const carouselCentre = carouselRect.left + carouselRect.width / 2;
+      const carouselCentre = carouselRect.left;
       let bestDist = Infinity;
       bestIdx = 0;
       cards.forEach((card, i) => {
         const r = card.getBoundingClientRect();
-        const cardCentre = r.left + r.width / 2;
+        const cardCentre = r.left;
         const dist = Math.abs(cardCentre - carouselCentre);
         if (dist < bestDist) { bestDist = dist; bestIdx = i; }
       });
     }
     dots.forEach((d, i) => d.classList.toggle('active', i === bestIdx));
+    if (!state.gridView) {
+      state.homeCategory = cards[bestIdx].dataset.category;
+      document.querySelectorAll('#category-filters button').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.category === state.homeCategory));
+      });
+    }
   };
 
   let scrollFrame = 0;
@@ -746,16 +806,26 @@ function renderGameCards() {
 function renderHomeTools() {
   const root = $('category-filters');
   root.innerHTML = '';
-  Object.entries({ all: { label: 'All subjects' }, ...CATEGORIES }).forEach(([id, category]) => {
+  Object.entries(CATEGORIES).forEach(([id, category]) => {
     const button = document.createElement('button');
     button.className = 'learning-btn';
     button.textContent = category.label;
-    button.setAttribute('aria-pressed', String(state.categoryFilter === id));
+    button.dataset.category = id;
+    button.setAttribute('aria-pressed', String(state.homeCategory === id));
     button.addEventListener('click', () => {
-      state.categoryFilter = id;
-      renderHomeTools();
-      renderGameCards();
-      $('games-grid').scrollLeft = 0;
+      state.homeCategory = id;
+      root.querySelectorAll('button').forEach((item) => {
+        item.setAttribute('aria-pressed', String(item === button));
+      });
+      const carousel = $('games-grid');
+      const group = carousel.querySelector(`[data-category="${id}"]`);
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth';
+      if (state.gridView) {
+        group.scrollIntoView({ behavior, block: 'start' });
+      } else {
+        const left = carousel.scrollLeft + group.getBoundingClientRect().left - carousel.getBoundingClientRect().left;
+        carousel.scrollTo({ left, behavior });
+      }
     });
     root.appendChild(button);
   });
@@ -1082,8 +1152,8 @@ function applyAnswerOutcome(value, { onReveal, correctFeedback, wrongFeedback })
   }
 
   const fact = state.currentQuestion.meta?.fact;
-  if (fact) recordProblemResult(fact, isCorrect);
   const stats = loadStats();
+  if (fact) recordProblemResult(stats, fact, isCorrect);
   const improved = recordLearning(stats, session.gameId, state.currentQuestion,
     state.currentQuestion.sourceModeId || session.modeId, isCorrect);
   saveStats(stats);
@@ -1416,7 +1486,7 @@ function bindEvents() {
   });
   $('all-games-btn').addEventListener('click', () => {
     state.gridView = !state.gridView;
-    $('all-games-btn').textContent = state.gridView ? 'Show carousel' : 'See all games';
+    $('all-games-btn').textContent = state.gridView ? 'Carousel view' : 'Grid view';
     $('all-games-btn').setAttribute('aria-pressed', String(state.gridView));
     renderGameCards();
   });
@@ -1501,8 +1571,6 @@ async function init() {
   await navigateToRoute(getHashRoute(), { skipHistory: true });
 
   // Show picker on first ever load (no animal saved yet).
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const hasSavedAnimal = raw && JSON.parse(raw).mascot;
   if (!hasSavedAnimal) openAnimalPicker();
 
   const activeScreen = document.querySelector('.screen.active');
@@ -1514,12 +1582,14 @@ async function init() {
   );
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const registerWorker = () => {
       navigator.serviceWorker
         .register('sw.js', { updateViaCache: 'none' })
         .then((registration) => setupUpdateChecks(registration))
         .catch(() => {});
-    });
+    };
+    if (document.readyState === 'complete') registerWorker();
+    else window.addEventListener('load', registerWorker, { once: true });
   }
 }
 
@@ -1533,6 +1603,23 @@ async function init() {
 //     skipWaiting(); the resulting `controllerchange` triggers a reload so
 //     the new version takes over cleanly.
 function setupUpdateChecks(registration) {
+  const checkOfflineStatus = () => {
+    const label = $('offline-status');
+    label.textContent = 'Offline setup not yet verified.';
+    const worker = navigator.serviceWorker.controller;
+    if (!worker) return;
+    const channel = new MessageChannel();
+    const timeout = setTimeout(() => channel.port1.close(), 5000);
+    channel.port1.onmessage = ({ data }) => {
+      clearTimeout(timeout);
+      channel.port1.close();
+      if (worker !== navigator.serviceWorker.controller) return;
+      label.textContent = data.type === 'OFFLINE_STATUS' && data.ready
+        ? 'Ready to play offline.' : 'Offline setup incomplete. Reconnect to play online.';
+    };
+    worker.postMessage({ type: 'OFFLINE_STATUS' }, [channel.port2]);
+  };
+  checkOfflineStatus();
   let reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloading) return;
@@ -1564,7 +1651,10 @@ function setupUpdateChecks(registration) {
   // Re-check for a new sw.js when the tab becomes visible and every 30 minutes.
   const checkForUpdate = () => registration.update().catch(() => {});
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkForUpdate();
+    if (document.visibilityState === 'visible') {
+      checkForUpdate();
+      checkOfflineStatus();
+    }
   });
   setInterval(checkForUpdate, 30 * 60 * 1000);
 }

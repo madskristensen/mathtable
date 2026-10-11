@@ -1,8 +1,8 @@
-import { MODE_IDS, randomInt, shuffle } from './_shared.js';
-import { COUNTRIES, COUNTRY_CODES, REGIONS, codesByRegion } from './data/europe.js';
-import { isMastered } from '../learning.js';
+import { MODE_IDS, randomInt, shuffle } from './_shared.js?v=66';
+import { COUNTRIES, COUNTRY_CODES, REGIONS, codesByRegion } from './data/europe.js?v=66';
+import { isMastered } from '../learning.js?v=66';
 
-const SVG_URL = './games/data/europe.svg?v=1';
+const SVG_URL = './games/data/europe.svg?v=66';
 // Cropped viewBox: keep the frame tight on western/central/southern Europe.
 // Russia renders but its eastern reach simply spills outside this viewport,
 // so the rest of the continent stays large and the layout doesn't shift.

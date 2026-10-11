@@ -1,4 +1,4 @@
-import { MODE_IDS, randomInt, shuffle, pad2 } from './_shared.js';
+import { MODE_IDS, randomInt, shuffle, pad2 } from './_shared.js?v=66';
 
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
