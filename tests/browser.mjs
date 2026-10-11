@@ -264,7 +264,7 @@ try {
 
     // Load every production-version module (including maps) from the precache.
     await evaluate(`(async () => {
-      const cache = await caches.open('kids-hub-v67');
+      const cache = await caches.open('kids-hub-v68');
       for (const request of await cache.keys()) {
         if (/\\/games\\/[^/]+\\.js/.test(request.url)) {
           const { game } = await import(request.url);
@@ -470,7 +470,7 @@ try {
 
   await navigate('/');
   await ready('!!navigator.serviceWorker.controller', 'service-worker control');
-  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v67"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
+  const cached = await evaluate('(async () => { const cache = await caches.open("kids-hub-v68"); return (await cache.keys()).map(r => new URL(r.url).pathname); })()');
   assert.ok(cached.includes('/learning.js'));
   await command('Network.enable');
   await command('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });

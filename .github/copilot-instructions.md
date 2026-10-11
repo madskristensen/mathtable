@@ -225,7 +225,7 @@ High scores are saved per `gameId`, folding legacy `gameId:modeId` buckets into 
 
 ## Service worker
 
-Update `CACHE_NAME` in `docs/sw.js` and the changed assets' query revisions whenever release assets change. Unchanged assets may retain earlier revisions. Release v67 updates the stylesheet to `?v=67` and retains `?v=66` for unchanged modules and assets; `sw.js` and navigation HTML stay unversioned. Keep every exact dependency URL in `ASSETS`; `tests\performance.test.mjs` verifies versioned assets and the dependency closure.
+Update `CACHE_NAME` in `docs/sw.js` and the changed assets' query revisions whenever release assets change. Unchanged assets may retain earlier revisions. Release v68 updates the stylesheet to `?v=68` and retains `?v=66` for unchanged modules and assets; `sw.js` and navigation HTML stay unversioned. Keep every exact dependency URL in `ASSETS`; `tests\performance.test.mjs` verifies versioned assets and the dependency closure.
 
 Install fetches every required asset with HTTP-cache bypass and checks status/content type before writes. Any failure rejects installation and deletes only the new release after all writes settle, preserving the old worker/cache. Do not call `skipWaiting()` during install: activation requires the user-confirmed update banner. Precached assets never revalidate. Runtime resources are bounded, app-scope-only, and cache writes/trimming are registered synchronously with `event.waitUntil()`. Cleanup only deletes obsolete `kids-hub-` caches; unrelated caches are untouched. Navigation uses the cached shell, and uncached offline requests get an explicit 503 response.
 

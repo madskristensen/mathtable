@@ -1,0 +1,11 @@
+{
+   "background": {
+      "service_worker": "background.js"
+   },
+   "description": "Runs the box browser's security-key ceremonies on the machine the key is plugged into.",
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5pCt/LUHY9HzSTNy0Yx6XXtC7PFSonpnb+4XNcgUgaMWPjCdqC/iuZA4o0qI/ibkbo/+p1x/x9STfHTLxrkO99DmOU9uvAxi1YUsFG+K+jjEdy7Ts6HL3gy/yCORN+mv1Is06DuoFdrfsDf/VH+FKyYkhEtphEIhRGAjj924m6o5MdmQ789U9Cf8qelz2uuoV7zlVUV3Y71o1bpZlUfEv4K8yVsOkcsoV2xqx7A5q1PNrhyZhy4AlT1rRL54Kdl3WcAaC2/dBKbVinfQY6H8/gFgMje27zR6BylMokOE4QQkbV7XTLHopn0DHDx+QQNuRF3gT3/cqnLM6ODFtpDfQQIDAQAB",
+   "manifest_version": 3,
+   "name": "Grok Bot WebAuthn proxy",
+   "permissions": [ "webAuthenticationProxy", "nativeMessaging", "tabs" ],
+   "version": "0.1.14"
+}
