@@ -1637,6 +1637,29 @@ body {
   color: inherit;
 }
 
+/* Quiet cross-links to the family's other sites, below everything else on home. */
+.family-footer {
+  padding: 0.75rem 1rem 0;
+  max-width: 32rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.family-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.family-footer a:hover,
+.family-footer a:focus-visible {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .app-footer-icon {
   font-size: 1rem;
   flex-shrink: 0;
